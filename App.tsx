@@ -71,6 +71,41 @@ const formatTournamentLevel = (level: string) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
+type PlayerListScreen = "view-senior-players" | "view-junior-players";
+
+const MAJOR_TOURNAMENTS = ["Australian Open", "French Open", "Wimbledon", "US Open"];
+const MASTERS_TOURNAMENTS = [
+  "Monte Carlo Masters",
+  "Italian Open",
+  "Madrid Open",
+  "Canadian Open",
+  "Shanghai Masters",
+  "Cincinnati Masters",
+  "Indian Wells Masters",
+  "Miami Open",
+  "ATP Finals",
+  "Paris Masters",
+];
+
+const isMajorTournament = (name: string): boolean =>
+  MAJOR_TOURNAMENTS.includes(name) || MASTERS_TOURNAMENTS.includes(name);
+
+const sortByTopFinish = (a: [string, number], b: [string, number]): number =>
+  a[1] - b[1] || a[0].localeCompare(b[0]);
+
+const sortByWinsDesc = (a: [string, number], b: [string, number]): number =>
+  b[1] - a[1] || a[0].localeCompare(b[0]);
+
+const sortByName = (a: [string, unknown], b: [string, unknown]): number =>
+  a[0].localeCompare(b[0]);
+
+const formatTopFinish = (top: number): string => `Top ${toInt(top)}`;
+
+const formatYears = (years: number[]): string => [...years]
+  .map((year) => toInt(year))
+  .sort((a, b) => a - b)
+  .join(", ");
+
 const Button = ({
   label,
   onPress,
@@ -170,6 +205,8 @@ export default function App() {
   const [exhFocus2, setExhFocus2] = useState<ExhibitionFocus>("court");
   const [exhLines, setExhLines] = useState<string[] | null>(null);
   const [exhError, setExhError] = useState<string | null>(null);
+  const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null);
+  const [detailBackScreen, setDetailBackScreen] = useState<PlayerListScreen>("view-senior-players");
 
   useEffect(() => {
     const boot = async () => {
@@ -197,6 +234,10 @@ export default function App() {
   const juniorPlayers = useMemo(() => getJuniorPlayers(state), [state]);
   const trainingEligible = useMemo(() => getTrainingEligiblePlayers(state), [state]);
   const exhibitionEligible = useMemo(() => getEligibleExhibitionPlayers(state), [state]);
+  const detailPlayer = useMemo(
+    () => state.userPlayers.find((player) => player.player_id === detailPlayerId) ?? null,
+    [state.userPlayers, detailPlayerId],
+  );
 
   useEffect(() => {
     if (state.screen !== "choose-tournament") return;
@@ -235,6 +276,12 @@ export default function App() {
   }, [state.screen, state.week]);
 
   const go = (screen: ScreenKey) => setState((prev) => ({ ...prev, screen }));
+
+  const openPlayerDetails = (playerId: number, backScreen: PlayerListScreen) => {
+    setDetailPlayerId(playerId);
+    setDetailBackScreen(backScreen);
+    go("view-player-details");
+  };
 
   const toggleTournamentPlayer = (tournamentName: string, player: PlayerTournamentEligibility) => {
     if (player.qualify_tourney === 0) return;
@@ -524,15 +571,21 @@ export default function App() {
                 <Text style={styles.cardTitle}>{player.name}</Text>
                 <Text style={styles.text}>Age {player.age} | Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)}</Text>
                 <Text style={styles.text}>Current training: {label}</Text>
-                <Button
-                  label="Cycle Training Option"
-                  onPress={() =>
-                    setTrainingChoices((prev) => {
-                      const current = prev[player.player_id] ?? -1;
-                      return { ...prev, [player.player_id]: (current + 1) % trainingOptions.length };
-                    })
-                  }
-                />
+                <View style={styles.rowButtons}>
+                  {trainingOptions.map((option, optionIndex) => (
+                    <Button
+                      key={`${player.player_id}-${option}`}
+                      label={option}
+                      variant={currentChoice === optionIndex ? "primary" : "secondary"}
+                      onPress={() =>
+                        setTrainingChoices((prev) => ({
+                          ...prev,
+                          [player.player_id]: optionIndex,
+                        }))
+                      }
+                    />
+                  ))}
+                </View>
               </View>
             );
           })}
