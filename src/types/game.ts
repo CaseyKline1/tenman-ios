@@ -75,6 +75,7 @@ export interface Player {
   stamina: number;
   junior: boolean;
   career_earnings: number;
+  earnings_share: number;
   heat: number;
   hard_heat: number;
   clay_heat: number;
@@ -101,6 +102,7 @@ export type ScreenKey =
   | "choose-tournament"
   | "tournament-results"
   | "menu"
+  | "retire-agent"
   | "view-senior-players"
   | "view-junior-players"
   | "training"
@@ -116,6 +118,7 @@ export interface TournamentResult {
 
 export interface GameState {
   userName: string;
+  agent_earnings: number;
   week: number;
   year: number;
   // 0 means current week tournaments are not processed yet.

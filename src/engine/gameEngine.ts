@@ -32,6 +32,7 @@ const MASTERS_TOURNAMENTS = [
   "ATP Finals",
   "Paris Masters",
 ];
+const STAMINA_MAX = 99;
 
 const roundLabel = (round: number, rounds: number, qualifying = false): string => {
   if (qualifying) {
@@ -136,9 +137,10 @@ const createPlayer = (userName: string, territoryId: number, takenNames: Set<str
     injury_prone: randomBetween(0, 1),
     big_moments: randomBetween(territory.clutchRange[0], territory.clutchRange[1]),
     serve,
-    stamina: randomBetween(60, 85),
+    stamina: clamp(randomBetween(60, 85), 1, STAMINA_MAX),
     junior,
     career_earnings: 0,
+    earnings_share: randomInt(1, 10),
     heat: 0,
     hard_heat: 0,
     clay_heat: 0,
@@ -163,7 +165,8 @@ const createPlayer = (userName: string, territoryId: number, takenNames: Set<str
 
 const useEnergy = (player: Player) => {
   const normalizedEnergy = clamp(player.energy / 100, 0.01, 1);
-  const staminaPenalty = Math.sqrt((100 - player.stamina) / 25);
+  const effectiveStamina = clamp(player.stamina, 1, STAMINA_MAX);
+  const staminaPenalty = Math.sqrt((100 - effectiveStamina) / 25);
   const energyUsed = 0.15 / Math.sqrt(normalizedEnergy) * staminaPenalty;
   player.energy = clamp(player.energy - energyUsed, 0.01, 100);
 };
@@ -359,15 +362,26 @@ const pointsForRoundLoss = (
   return Math.max(points, roundOut === 1 ? 3 : 0);
 };
 
-const awardPrizeMoney = (player: Player, tournament: Tournament, win: boolean, roundOut: number) => {
+const awardPrizeMoney = (player: Player, tournament: Tournament, win: boolean, roundOut: number): number => {
   if (win) {
     player.career_earnings += tournament.prize_money;
-    return;
+    return tournament.prize_money;
   }
   const rounds = Math.ceil(Math.log2(tournament.participants));
   const playersLeft = Math.pow(2, rounds - roundOut + 1);
-  player.career_earnings += Math.round(tournament.prize_money / Math.max(playersLeft, 1));
+  const payout = Math.round(tournament.prize_money / Math.max(playersLeft, 1));
+  player.career_earnings += payout;
+  return payout;
 };
+
+const getEarningsSharePercent = (player: Player): number => {
+  const share = Number(player.earnings_share);
+  if (!Number.isFinite(share)) return 1;
+  return Math.max(1, Math.min(10, Math.round(share)));
+};
+
+const calculateAgentCut = (player: Player, payout: number): number =>
+  Math.round(Math.max(0, payout) * getEarningsSharePercent(player) / 100);
 
 const assignTournamentPoints = (
   player: Player,
@@ -437,16 +451,18 @@ const winTournament = (
   year: number,
   rounds: number,
   lines: string[],
-) => {
+): number => {
   assignTournamentPoints(player, tournament, true, rounds + 1);
+  let payout = 0;
   if (!player.junior && "prize_money" in tournament) {
-    awardPrizeMoney(player, tournament as Tournament, true, rounds + 1);
+    payout = awardPrizeMoney(player, tournament as Tournament, true, rounds + 1);
   }
   if (tournament.level === "grand_slam") {
     player.grand_slam_wins += 1;
   }
   addTournamentWin(player, tournament.name, year);
   lines.push(`${player.name} wins the ${tournament.name}`);
+  return payout;
 };
 
 const updateBestResults = (player: Player, tournament: Tournament | JuniorTournament, resultTop: number, lines: string[]) => {
@@ -549,12 +565,13 @@ const runTournament = (
   tournament: Tournament | JuniorTournament,
   players: Player[],
   year: number,
-): string[] => {
+): { lines: string[]; agentEarnings: number } => {
   if (!players.length) {
-    return [];
+    return { lines: [], agentEarnings: 0 };
   }
 
   const lines: string[] = [];
+  let agentEarnings = 0;
   const rounds = Math.ceil(Math.log2(tournament.participants));
   const isJunior = players[0].junior;
 
@@ -584,7 +601,7 @@ const runTournament = (
 
   const tournamentPlayers = [...directEntries, ...qualifiedPlayers];
   if (!tournamentPlayers.length) {
-    return lines;
+    return { lines, agentEarnings };
   }
 
   const playerRoundOut = new Map<number, number>();
@@ -635,14 +652,18 @@ const runTournament = (
   for (const player of tournamentPlayers) {
     const roundOut = playerRoundOut.get(player.player_id) ?? 1;
     const won = !!winner && winner.player_id === player.player_id;
+    let payout = 0;
 
     if (won) {
-      winTournament(player, tournament, year, rounds, lines);
+      payout = winTournament(player, tournament, year, rounds, lines);
     } else {
       assignTournamentPoints(player, tournament, false, roundOut);
       if (!player.junior) {
-        awardPrizeMoney(player, tournament as Tournament, false, roundOut);
+        payout = awardPrizeMoney(player, tournament as Tournament, false, roundOut);
       }
+    }
+    if (!player.junior && payout > 0) {
+      agentEarnings += calculateAgentCut(player, payout);
     }
 
     const resultTop = Math.max(1, Math.pow(2, Math.max(0, rounds - Math.min(roundOut, rounds) + 1)));
@@ -650,7 +671,7 @@ const runTournament = (
     player.annual_results[tournament.name] = resultTop;
   }
 
-  return lines;
+  return { lines, agentEarnings };
 };
 
 const rankSeniors = (players: Player[], countWeeksRankedOne: boolean = true) => {
@@ -879,7 +900,7 @@ const improvePlayerAtYearEnd = (player: Player) => {
 
   player.overall = clamp(player.overall + improvementRate, 1, 100);
   player.serve = clamp(player.serve, 1, 100);
-  player.stamina = clamp(player.stamina, 1, 100);
+  player.stamina = clamp(player.stamina, 1, STAMINA_MAX);
 };
 
 const endOfYear = (state: GameState) => {
@@ -939,6 +960,7 @@ const applyWeeklyPlayerProgress = (player: Player) => {
 
 export const createInitialState = (): GameState => ({
   userName: "",
+  agent_earnings: 0,
   week: 1,
   year: 2025,
   lastProcessedTournamentWeek: 0,
@@ -950,6 +972,7 @@ export const createInitialState = (): GameState => ({
 
 export const startNewGame = (userName: string): GameState => ({
   userName,
+  agent_earnings: 0,
   week: 1,
   year: 2025,
   lastProcessedTournamentWeek: 0,
@@ -1097,8 +1120,9 @@ export const enterTournaments = (
     const players = next.userPlayers.filter((player) => playerIds.includes(player.player_id));
     if (players.length === 0) continue;
 
-    const lines = runTournament(tournament, players, next.year);
+    const { lines, agentEarnings } = runTournament(tournament, players, next.year);
     output.push({ tournamentName: name, lines });
+    next.agent_earnings += agentEarnings;
   }
 
   markCurrentWeekProcessed(next);
@@ -1149,7 +1173,7 @@ export const trainPlayers = (state: GameState, choices: Record<number, number>):
       player.serve = clamp(player.serve + delta, 1, 100);
     } else if (choice === 2) {
       const delta = player.age < 24 ? randomBetween(1.3, 3) * Math.pow(player.potential / 100, 2) * (player.stamina < 68 ? 1.7 : 1) : randomBetween(0, 1.5) * Math.pow(player.potential / 100, 2);
-      player.stamina = clamp(player.stamina + delta, 1, 100);
+      player.stamina = clamp(player.stamina + delta, 1, STAMINA_MAX);
     } else if (choice === 3) {
       const delta = player.age < 24 ? randomBetween(2, 6) * Math.pow(player.potential / 100, 2) * (player.big_moments < 60 ? 1.7 : 1) : randomBetween(0, 2) * Math.pow(player.potential / 100, 2);
       player.big_moments = clamp(player.big_moments + delta, 1, 100);
@@ -1231,7 +1255,7 @@ const applyExhibitionFocus = (player: Player, surface: Surface, focus: Exhibitio
   }
   if (focus === "stamina") {
     const delta = randomBetween(0.8, 2) * Math.pow(player.potential / 100, 2);
-    player.stamina = clamp(player.stamina + delta, 1, 100);
+    player.stamina = clamp(player.stamina + delta, 1, STAMINA_MAX);
     return `${player.name} improved stamina by ${delta.toFixed(1)} points`;
   }
   const delta = randomBetween(1, 3) * Math.pow(player.potential / 100, 2);

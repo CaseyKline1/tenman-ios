@@ -113,6 +113,7 @@ const PlayerCard = ({
       <MiniStat label="Age" value={player.age} />
       <MiniStat label="Overall" value={toInt(player.overall)} />
       <MiniStat label="Potential" value={player.potential_letter} />
+      <MiniStat label="Share" value={`${player.earnings_share}%`} />
       <MiniStat label="Rank" value={`#${toInt(player.ranking)}`} />
       <MiniStat label="Energy" value={toInt(player.energy)} />
       <MiniStat label="Serve" value={toInt(player.serve)} />
@@ -390,6 +391,7 @@ export default function App() {
       {state.screen === "menu" && (
         <View style={styles.section}>
           <Text style={styles.h2}>Menu</Text>
+          <Text style={styles.text}>Lifetime Agent Earnings: {formatMoney(state.agent_earnings)}</Text>
           <Button label="Advance Week" onPress={() => setState((prev) => advanceWeek(prev))} />
           <Button label="View Senior Players" onPress={() => go("view-senior-players")} />
           <Button label="View Junior Players" onPress={() => go("view-junior-players")} />
@@ -401,6 +403,28 @@ export default function App() {
           />
           <Button label="Skip Ahead" variant="gold" onPress={() => go("skip-ahead")} />
           <Button label="Remove Player" variant="danger" onPress={() => go("remove-player")} />
+          <Button label="Retire Agent" variant="danger" onPress={() => go("retire-agent")} />
+        </View>
+      )}
+
+      {state.screen === "retire-agent" && (
+        <View style={styles.section}>
+          <Text style={styles.h2}>Retire Agent</Text>
+          <View style={styles.card}>
+            <Text style={styles.text}>
+              This action is permanent. Your current career progress will be deleted and your game will start over.
+            </Text>
+          </View>
+          <Button
+            label="Delete"
+            variant="danger"
+            onPress={async () => {
+              await clearGameState();
+              setState(createInitialState());
+              setUsername("");
+            }}
+          />
+          <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
         </View>
       )}
 
@@ -419,6 +443,7 @@ export default function App() {
                   <MiniStat label="Season" value={`${player.season_record.wins}-${player.season_record.losses}`} />
                   <MiniStat label="Career" value={`${player.career_record.wins}-${player.career_record.losses}`} />
                   <MiniStat label="Titles" value={player.tournament_wins} />
+                  <MiniStat label="Earnings" value={formatMoney(player.career_earnings)} />
                 </View>
               }
             />
