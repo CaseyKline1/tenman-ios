@@ -25,7 +25,7 @@ export const ChooseTournamentScreen = ({
 }: ChooseTournamentScreenProps) => (
   <Section>
     <PaperText style={styles.h2}>Choose Tournaments</PaperText>
-    {availableTournaments.map(({ tournament, players }) => (
+    {availableTournaments.map(({ tournament, players, isJunior }) => (
       <CardBlock key={tournament.name} style={styles[`cardSurface_${tournament.surface}`]}>
         <PaperText style={styles.cardTitle}>{tournament.name}</PaperText>
         <PaperText style={styles.text}><CountryFlag countryName={tournament.country} /></PaperText>
@@ -33,7 +33,7 @@ export const ChooseTournamentScreen = ({
         <PaperText style={styles.text}>Prize: {formatMoney(tournament.prize_money)}</PaperText>
 
         {players.length === 0 ? (
-          <PaperText style={styles.text}>No players available.</PaperText>
+          <PaperText style={styles.text}>{isJunior ? "No junior players available." : "No senior players available."}</PaperText>
         ) : (
           players.map((player) => {
             const selected = (selectedByTournament[tournament.name] ?? []).includes(player.player_id);
