@@ -606,48 +606,90 @@ const runTournament = (
   }
 
   const playerRoundOut = new Map<number, number>();
-  const finalists: Player[] = [];
+  const shufflePlayers = (input: Player[]): Player[] => {
+    const shuffled = [...input];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = randomInt(0, i);
+      const temp = shuffled[i];
+      shuffled[i] = shuffled[j];
+      shuffled[j] = temp;
+    }
+    return shuffled;
+  };
 
-  for (const player of tournamentPlayers) {
-    const baseDifficulty = getDifficulty(tournament, player.junior, false);
-    let survived = true;
-    for (let round = 1; round <= rounds; round += 1) {
+  const trimManagedField = (field: Player[], cap: number, round: number): Player[] => {
+    let remaining = shufflePlayers(field);
+    const safeCap = Math.max(1, cap);
+    while (remaining.length > safeCap) {
+      const reductionsNeeded = remaining.length - safeCap;
+      const pairCount = Math.min(reductionsNeeded, Math.floor(remaining.length / 2));
+      if (pairCount === 0) break;
+
+      const next: Player[] = [];
+      let cursor = 0;
+      for (let i = 0; i < pairCount; i += 1) {
+        const match = pvpMatch(remaining[cursor], remaining[cursor + 1], tournament, year, round, rounds);
+        lines.push(match.line);
+        playerRoundOut.set(match.loser.player_id, round);
+        next.push(match.winner);
+        cursor += 2;
+      }
+      while (cursor < remaining.length) {
+        next.push(remaining[cursor]);
+        cursor += 1;
+      }
+      remaining = shufflePlayers(next);
+    }
+    return remaining;
+  };
+
+  let activePlayers = [...tournamentPlayers];
+  for (let round = 1; round <= rounds; round += 1) {
+    if (!activePlayers.length) break;
+
+    const slotsThisRound = Math.max(1, Math.floor(tournament.participants / Math.pow(2, round - 1)));
+    const slotsNextRound = Math.max(1, Math.floor(slotsThisRound / 2));
+
+    if (activePlayers.length > slotsThisRound) {
+      activePlayers = trimManagedField(activePlayers, slotsThisRound, round);
+    }
+
+    const shuffled = shufflePlayers(activePlayers);
+    const forcedManagedMatches = Math.max(0, shuffled.length - slotsNextRound);
+    const playersInManagedMatches = Math.min(shuffled.length, forcedManagedMatches * 2);
+    const winners: Player[] = [];
+
+    for (let i = 0; i < playersInManagedMatches; i += 2) {
+      const match = pvpMatch(shuffled[i], shuffled[i + 1], tournament, year, round, rounds);
+      lines.push(match.line);
+      playerRoundOut.set(match.loser.player_id, round);
+      winners.push(match.winner);
+    }
+
+    for (let i = playersInManagedMatches; i < shuffled.length; i += 1) {
+      const player = shuffled[i];
+      const baseDifficulty = getDifficulty(tournament, player.junior, false);
       const extra = rounds - round <= 2 ? 4 : 1;
       const match = cpuMatch(player, tournament, round, baseDifficulty + round * extra, rounds);
       lines.push(match.line);
-      if (!match.win) {
+      if (match.win) {
+        winners.push(player);
+      } else {
         playerRoundOut.set(player.player_id, round);
-        survived = false;
-        break;
       }
     }
-    if (survived) {
-      finalists.push(player);
-      playerRoundOut.set(player.player_id, rounds + 1);
-    }
+
+    activePlayers = winners.length > slotsNextRound ? trimManagedField(winners, slotsNextRound, round) : winners;
+  }
+
+  if (activePlayers.length > 1) {
+    activePlayers = trimManagedField(activePlayers, 1, rounds);
   }
 
   let winner: Player | null = null;
-  if (finalists.length === 1) {
-    winner = finalists[0];
-  } else if (finalists.length > 1) {
-    lines.push(`${finalists.length} of your players reached the title match stages in ${tournament.name}`);
-    let remaining = [...finalists];
-    while (remaining.length > 1) {
-      const nextRound: Player[] = [];
-      for (let i = 0; i < remaining.length; i += 2) {
-        if (i === remaining.length - 1) {
-          nextRound.push(remaining[i]);
-          continue;
-        }
-        const match = pvpMatch(remaining[i], remaining[i + 1], tournament, year, rounds, rounds);
-        lines.push(match.line);
-        playerRoundOut.set(match.loser.player_id, rounds);
-        nextRound.push(match.winner);
-      }
-      remaining = nextRound;
-    }
-    winner = remaining[0];
+  if (activePlayers.length === 1) {
+    winner = activePlayers[0];
+    playerRoundOut.set(winner.player_id, rounds + 1);
   }
 
   for (const player of tournamentPlayers) {
