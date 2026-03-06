@@ -70,7 +70,7 @@ export const TERRITORIES: TerritoryProfile[] = [
   {
     id: 5,
     name: "University of North Carolina",
-    scoutCost: 15000,
+    scoutCost: 10000,
     nationalities: ["USA", "England", "Argentina", "Chile", "Romania", "Switzerland", "Canada", "Cyprus", "Australia", "Denmark", "Spain"],
     overallRange: [50, 62],
     potentialRange: [40, 90],
