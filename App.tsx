@@ -518,6 +518,7 @@ export default function App() {
               ) : (
                 players.map((player) => {
                   const selected = (selectedByTournament[tournament.name] ?? []).includes(player.player_id);
+                  const isRequired = player.qualify_tourney === -1;
                   return (
                     <TouchableRipple
                       key={player.player_id}
@@ -525,9 +526,16 @@ export default function App() {
                       onPress={() => toggleTournamentPlayer(tournament.name, player)}
                     >
                       <View>
-                        <PaperText style={styles.playerOptionTitle}>
-                          <CountryFlag countryName={player.country} showName={false} /> {player.name}
-                        </PaperText>
+                        <View style={styles.playerOptionHeader}>
+                          <PaperText style={styles.playerOptionTitle}>
+                            <CountryFlag countryName={player.country} showName={false} /> {player.name}
+                          </PaperText>
+                          {isRequired ? (
+                            <PaperText style={[styles.playerOptionBadge, styles.playerOptionBadgeRequired]}>Required</PaperText>
+                          ) : selected ? (
+                            <PaperText style={[styles.playerOptionBadge, styles.playerOptionBadgeSelected]}>Selected</PaperText>
+                          ) : null}
+                        </View>
                         <PaperText style={styles.playerOptionText}>Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)} | Energy {toInt(player.energy)}</PaperText>
                         <PaperText style={styles.playerOptionText}>Qualification: {QUALIFICATION_LABELS[player.qualify_tourney] ?? "Unknown"}</PaperText>
                       </View>
@@ -1007,6 +1015,7 @@ export default function App() {
               <PaperText style={styles.h3}>Select Players</PaperText>
               {exhibitionEligible.map((player) => {
                 const selected = player.player_id === exhPlayer1 || player.player_id === exhPlayer2;
+                const selectionSlot = player.player_id === exhPlayer1 ? "Selected P1" : player.player_id === exhPlayer2 ? "Selected P2" : null;
                 return (
                   <TouchableRipple
                     key={player.player_id}
@@ -1019,7 +1028,12 @@ export default function App() {
                     }}
                   >
                     <View>
-                      <PaperText style={styles.playerOptionTitle}>{player.name}</PaperText>
+                      <View style={styles.playerOptionHeader}>
+                        <PaperText style={styles.playerOptionTitle}>{player.name}</PaperText>
+                        {selectionSlot ? (
+                          <PaperText style={[styles.playerOptionBadge, styles.playerOptionBadgeSelected]}>{selectionSlot}</PaperText>
+                        ) : null}
+                      </View>
                       <PaperText style={styles.playerOptionText}>Energy {toInt(player.energy)} | Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)}</PaperText>
                     </View>
                   </TouchableRipple>
@@ -1195,8 +1209,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#bfdbfe",
   },
   cardSurface_clay: {
-    borderColor: "#b45309",
-    backgroundColor: "#fed7aa",
+    borderColor: "#b91c1c",
+    backgroundColor: "#fecaca",
   },
   cardSurface_grass: {
     borderColor: "#166534",
@@ -1254,9 +1268,9 @@ const styles = StyleSheet.create({
     borderColor: "#2563eb",
   },
   miniStat_clay: {
-    backgroundColor: "#fdba74",
+    backgroundColor: "#fca5a5",
     borderWidth: 1,
-    borderColor: "#c2410c",
+    borderColor: "#dc2626",
   },
   miniStat_grass: {
     backgroundColor: "#86efac",
@@ -1299,16 +1313,40 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   playerOptionSelected: {
-    borderColor: "#2563eb",
-    backgroundColor: "#eff6ff",
+    borderWidth: 2,
+    borderColor: "#1d4ed8",
+    backgroundColor: "#dbeafe",
   },
   playerOptionDisabled: {
     opacity: 0.45,
+  },
+  playerOptionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  playerOptionBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    fontSize: 11,
+    fontWeight: "700",
+    overflow: "hidden",
+  },
+  playerOptionBadgeSelected: {
+    backgroundColor: "#1d4ed8",
+    color: "#ffffff",
+  },
+  playerOptionBadgeRequired: {
+    backgroundColor: "#b91c1c",
+    color: "#ffffff",
   },
   playerOptionTitle: {
     color: "#000000",
     fontWeight: "700",
     fontSize: 14,
+    flex: 1,
   },
   playerOptionText: {
     color: "#111827",
