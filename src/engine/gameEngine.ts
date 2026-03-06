@@ -72,7 +72,27 @@ const generateName = (nationality: string): string => {
   return `${randomChoice(pool.first)} ${randomChoice(pool.last)}`;
 };
 
-const createPlayer = (userName: string, territoryId: number): Player => {
+const generateUniqueName = (nationality: string, takenNames: Set<string>): string => {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    const candidate = generateName(nationality);
+    if (!takenNames.has(candidate)) {
+      takenNames.add(candidate);
+      return candidate;
+    }
+  }
+
+  const base = generateName(nationality);
+  let suffix = 2;
+  let fallback = `${base} ${suffix}`;
+  while (takenNames.has(fallback)) {
+    suffix += 1;
+    fallback = `${base} ${suffix}`;
+  }
+  takenNames.add(fallback);
+  return fallback;
+};
+
+const createPlayer = (userName: string, territoryId: number, takenNames: Set<string>): Player => {
   const territory = TERRITORIES.find((t) => t.id === territoryId) ?? TERRITORIES[0];
   const nationality = randomChoice(territory.nationalities);
   const age = randomInt(territory.ageRange[0], territory.ageRange[1]);
@@ -89,7 +109,7 @@ const createPlayer = (userName: string, territoryId: number): Player => {
   const junior = age <= 18;
   const player: Player = {
     player_id: randomInt(1_000_000, 9_999_999_999),
-    name: generateName(nationality),
+    name: generateUniqueName(nationality, takenNames),
     age,
     nationality,
     overall,
@@ -771,20 +791,12 @@ const resetSkippedTournamentPoints = (players: Player[], startWeek: number, endW
       } else {
         player.points_inputs[tournament.name] = 0;
       }
-      player.heat = 0;
-      player.hard_heat = 0;
-      player.clay_heat = 0;
-      player.grass_heat = 0;
     }
   }
 
   for (const tournament of skippedJunior) {
     for (const player of players.filter((p) => p.junior)) {
       player.junior_points_inputs[tournament.name] = 0;
-      player.heat = 0;
-      player.hard_heat = 0;
-      player.clay_heat = 0;
-      player.grass_heat = 0;
     }
   }
 };
@@ -870,6 +882,18 @@ const checkForInjury = (player: Player) => {
   }
 };
 
+const applyWeeklyPlayerProgress = (player: Player) => {
+  player.injury_weeks = Math.max(0, player.injury_weeks - 1);
+  checkForInjury(player);
+  player.energy = player.junior
+    ? clamp(player.energy + 7, 1, 100)
+    : clamp(Math.max(Math.pow(100 - player.energy, 0.8), player.energy + 11), 1, 100);
+  player.heat = Math.pow(player.heat, 2 / 3);
+  player.hard_heat = Math.pow(player.hard_heat, 2 / 3);
+  player.clay_heat = Math.pow(player.clay_heat, 2 / 3);
+  player.grass_heat = Math.pow(player.grass_heat, 2 / 3);
+};
+
 export const createInitialState = (): GameState => ({
   userName: "",
   week: 1,
@@ -898,7 +922,12 @@ export const getJuniorPlayers = (state: GameState): Player[] =>
 
 export const seeRecruits = (state: GameState, territoryId: number): GameState => {
   const next = cloneState(state);
-  next.offerRecruits = [createPlayer(next.userName, territoryId), createPlayer(next.userName, territoryId), createPlayer(next.userName, territoryId)];
+  const takenNames = new Set(next.userPlayers.map((player) => player.name));
+  next.offerRecruits = [
+    createPlayer(next.userName, territoryId, takenNames),
+    createPlayer(next.userName, territoryId, takenNames),
+    createPlayer(next.userName, territoryId, takenNames),
+  ];
   next.screen = "offer-recruits";
   return next;
 };
@@ -1036,15 +1065,7 @@ export const advanceWeek = (state: GameState): GameState => {
 
   next.week += 1;
   for (const player of next.userPlayers) {
-    player.injury_weeks = Math.max(0, player.injury_weeks - 1);
-    checkForInjury(player);
-    player.energy = player.junior
-      ? clamp(player.energy + 7, 1, 100)
-      : clamp(Math.max(Math.pow(100 - player.energy, 0.8), player.energy + 11), 1, 100);
-    player.heat = Math.pow(player.heat, 2 / 3);
-    player.hard_heat = Math.pow(player.hard_heat, 2 / 3);
-    player.clay_heat = Math.pow(player.clay_heat, 2 / 3);
-    player.grass_heat = Math.pow(player.grass_heat, 2 / 3);
+    applyWeeklyPlayerProgress(player);
   }
 
   if (next.week > 52) {
@@ -1097,13 +1118,15 @@ export const skipToWeek = (state: GameState, week: number): GameState => {
   const next = cloneState(state);
   if (week <= next.week || week > 52) return next;
 
-  const delta = week - next.week;
-  for (const player of next.userPlayers) {
-    player.injury_weeks = Math.max(0, player.injury_weeks - delta);
-    player.energy = clamp(player.energy + (player.junior ? 7 : 11) * delta, 1, 100);
+  const startWeek = next.week;
+  const weeksToAdvance = week - startWeek;
+  for (let i = 0; i < weeksToAdvance; i += 1) {
+    for (const player of next.userPlayers) {
+      applyWeeklyPlayerProgress(player);
+    }
   }
 
-  resetSkippedTournamentPoints(next.userPlayers, next.week + 1, week);
+  resetSkippedTournamentPoints(next.userPlayers, startWeek + 1, week);
   next.week = week;
   refreshStandings(next.userPlayers);
   next.screen = "choose-tournament";
@@ -1114,17 +1137,16 @@ export const skipToNextYear = (state: GameState): GameState => {
   const next = cloneState(state);
   const oldWeek = next.week;
 
+  const weeksToAdvance = 53 - oldWeek;
+  for (let i = 0; i < weeksToAdvance; i += 1) {
+    for (const player of next.userPlayers) {
+      applyWeeklyPlayerProgress(player);
+    }
+  }
+
   resetSkippedTournamentPoints(next.userPlayers, oldWeek + 1, 52);
   next.week = 1;
   next.year += 1;
-
-  for (const player of next.userPlayers) {
-    player.injury_weeks = Math.max(0, player.injury_weeks - (53 - oldWeek));
-    player.heat = 0;
-    player.hard_heat = 0;
-    player.clay_heat = 0;
-    player.grass_heat = 0;
-  }
 
   endOfYear(next);
   refreshStandings(next.userPlayers);
