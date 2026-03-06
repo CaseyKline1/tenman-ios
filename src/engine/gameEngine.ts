@@ -239,6 +239,14 @@ const getDifficulty = (
   return 50;
 };
 
+const winsGame = (player1Skill: number, player2Skill: number): boolean => {
+  const p1 = Math.max(player1Skill, 0);
+  const p2 = Math.max(player2Skill, 0);
+  const total = p1 + p2;
+  if (total <= 0) return Math.random() < 0.5;
+  return Math.random() < p1 / total;
+};
+
 const cpuMatch = (
   player: Player,
   tournament: Tournament | JuniorTournament,
@@ -461,7 +469,7 @@ const pvpMatch = (
     const p1Skill = calcSkill(player1, tournament, currentRound, set, game, p1Serve);
     const p2Skill = calcSkill(player2, tournament, currentRound, set, game, !p1Serve);
 
-    if (p1Skill > p2Skill + 15) p1Games += 1;
+    if (winsGame(p1Skill, p2Skill)) p1Games += 1;
     else p2Games += 1;
 
     useEnergy(player1);
