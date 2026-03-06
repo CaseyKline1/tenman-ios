@@ -84,10 +84,12 @@ const PlayerCard = ({
   player,
   extra,
   action,
+  inlineExtraStat,
 }: {
   player: Player;
   extra?: React.ReactNode;
   action?: React.ReactNode;
+  inlineExtraStat?: React.ReactNode;
 }) => (
   <View style={styles.card}>
     <Text style={styles.cardTitle}>
@@ -105,6 +107,7 @@ const PlayerCard = ({
       <MiniStat label="Hard" value={toInt(player.court_proficiencies.hard)} />
       <MiniStat label="Clay" value={toInt(player.court_proficiencies.clay)} />
       <MiniStat label="Grass" value={toInt(player.court_proficiencies.grass)} />
+      {inlineExtraStat}
     </View>
     {extra}
     {action}
@@ -289,11 +292,7 @@ export default function App() {
             <PlayerCard
               key={player.player_id}
               player={player}
-              extra={
-                <View style={styles.rowWrap}>
-                  <MiniStat label="Injury Prone" value={`${Math.round(player.injury_prone * 100)}%`} />
-                </View>
-              }
+              inlineExtraStat={<MiniStat label="Injury Prone" value={`${Math.round(player.injury_prone * 100)}%`} />}
               action={<Button label="Select Recruit" onPress={() => setState((prev) => addRecruit(prev, player.player_id))} />}
             />
           ))}
