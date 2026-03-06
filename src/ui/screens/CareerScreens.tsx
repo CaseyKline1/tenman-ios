@@ -1,6 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import { Text as PaperText, TextInput as PaperTextInput } from "react-native-paper";
+import { RecruitTerritoryOption } from "../../data/recruiting";
 import { InjuryAlert, Player } from "../../types/game";
 import { Button, CardBlock, MiniStat, PlayerCard, Section } from "../AppPrimitives";
 import { formatMoney, toInt } from "../appHelpers";
@@ -34,20 +35,30 @@ export const LandingScreen = ({ username, setUsername, onStart, onClearSave }: L
 );
 
 type RecruitTerritoriesScreenProps = {
-  territoryNames: string[];
-  onSelectTerritory: (territoryIndex: number) => void;
+  territories: RecruitTerritoryOption[];
+  cash: number;
+  onSelectTerritory: (territoryId: number) => void;
   onMenu: () => void;
 };
 
 export const RecruitTerritoriesScreen = ({
-  territoryNames,
+  territories,
+  cash,
   onSelectTerritory,
   onMenu,
 }: RecruitTerritoriesScreenProps) => (
   <Section>
-    <PaperText style={styles.h2}>Select Territory to Scout</PaperText>
-    {territoryNames.map((name, index) => (
-      <Button key={name} label={name} onPress={() => onSelectTerritory(index + 1)} />
+    <View style={styles.menuHeaderRow}>
+      <PaperText style={styles.h2}>Select Territory to Scout</PaperText>
+      <PaperText style={styles.menuCash}>Cash: {formatMoney(cash)}</PaperText>
+    </View>
+    {territories.map((territory) => (
+      <Button
+        key={territory.id}
+        label={`${territory.name} (${territory.scoutCost === 0 ? "Free" : formatMoney(territory.scoutCost)})`}
+        onPress={() => onSelectTerritory(territory.id)}
+        disabled={cash < territory.scoutCost}
+      />
     ))}
     <View style={styles.spacer} />
     <Button label="Menu" variant="secondary" onPress={onMenu} />

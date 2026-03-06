@@ -3,6 +3,7 @@ import { Surface } from "../types/game";
 export interface TerritoryProfile {
   id: number;
   name: string;
+  scoutCost: number;
   nationalities: string[];
   overallRange: [number, number];
   potentialRange: [number, number];
@@ -17,6 +18,7 @@ export const TERRITORIES: TerritoryProfile[] = [
   {
     id: 1,
     name: "Stanford University",
+    scoutCost: 7000,
     nationalities: ["USA", "England", "Argentina", "Spain", "France", "Germany", "Italy"],
     overallRange: [55, 69],
     potentialRange: [50, 100],
@@ -29,6 +31,7 @@ export const TERRITORIES: TerritoryProfile[] = [
   {
     id: 2,
     name: "Junior US Open",
+    scoutCost: 10000,
     nationalities: ["USA", "England", "Argentina", "Spain", "Mexico", "Canada", "France", "Germany", "Portugal", "Norway", "Australia"],
     overallRange: [45, 60],
     potentialRange: [60, 100],
@@ -41,6 +44,7 @@ export const TERRITORIES: TerritoryProfile[] = [
   {
     id: 3,
     name: "Junior Wimbledon",
+    scoutCost: 10000,
     nationalities: ["England", "USA", "Monaco", "Argentina", "Spain", "France", "Germany", "Portugal", "Norway", "Switzerland", "Sweden", "Ireland", "Scotland", "Serbia"],
     overallRange: [45, 60],
     potentialRange: [60, 100],
@@ -53,6 +57,7 @@ export const TERRITORIES: TerritoryProfile[] = [
   {
     id: 4,
     name: "Junior Australian Open",
+    scoutCost: 10000,
     nationalities: ["USA", "China", "Switzerland", "Italy", "England", "Argentina", "Spain", "France", "Germany", "Portugal", "Norway", "Australia"],
     overallRange: [45, 60],
     potentialRange: [60, 100],
@@ -65,6 +70,7 @@ export const TERRITORIES: TerritoryProfile[] = [
   {
     id: 5,
     name: "University of North Carolina",
+    scoutCost: 3000,
     nationalities: ["USA", "England", "Argentina", "Chile", "Romania", "Switzerland", "Canada", "Cyprus", "Australia", "Denmark", "Spain"],
     overallRange: [50, 62],
     potentialRange: [40, 90],
@@ -77,6 +83,7 @@ export const TERRITORIES: TerritoryProfile[] = [
   {
     id: 6,
     name: "Junior French Open",
+    scoutCost: 10000,
     nationalities: ["USA", "England", "Monaco", "Argentina", "Spain", "France", "Italy", "Germany", "Portugal", "Norway", "Australia", "Switzerland", "Sweden", "Serbia"],
     overallRange: [45, 60],
     potentialRange: [60, 100],
@@ -89,6 +96,7 @@ export const TERRITORIES: TerritoryProfile[] = [
   {
     id: 7,
     name: "Challenger Tournaments",
+    scoutCost: 0,
     nationalities: ["USA", "France", "Mexico", "Spain", "Germany", "Italy", "England", "China", "Canada", "Switzerland", "Australia", "Argentina", "Sweden", "Austria", "Poland", "India", "Serbia"],
     overallRange: [55, 70],
     potentialRange: [40, 87],
@@ -101,6 +109,7 @@ export const TERRITORIES: TerritoryProfile[] = [
   {
     id: 8,
     name: "IMG Tennis Academy",
+    scoutCost: 20000,
     nationalities: ["USA", "Spain", "France", "England", "Mexico"],
     overallRange: [38, 55],
     potentialRange: [75, 100],
@@ -111,6 +120,12 @@ export const TERRITORIES: TerritoryProfile[] = [
     clutchRange: [30, 95],
   },
 ];
+
+export type RecruitTerritoryOption = Pick<TerritoryProfile, "id" | "name" | "scoutCost">;
+
+export const RECRUIT_TERRITORY_OPTIONS: RecruitTerritoryOption[] = TERRITORIES
+  .map(({ id, name, scoutCost }) => ({ id, name, scoutCost }))
+  .sort((a, b) => a.scoutCost - b.scoutCost || a.name.localeCompare(b.name));
 
 export const NAME_POOL: Record<string, { first: string[]; last: string[] }> = {
   USA: {

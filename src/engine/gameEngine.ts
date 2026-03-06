@@ -1,6 +1,7 @@
 import {
   EXHIBITION_FOCUSES,
   ExhibitionFocus,
+  RECRUIT_TERRITORY_OPTIONS,
   TERRITORIES,
   TRAINING_OPTIONS,
 } from "../data/recruiting";
@@ -59,11 +60,16 @@ export const getJuniorPlayers = (state: GameState): Player[] =>
 
 export const seeRecruits = (state: GameState, territoryId: number): GameState => {
   const next = cloneState(state);
+  const territory = TERRITORIES.find((entry) => entry.id === territoryId);
+  if (!territory) return next;
+  if (next.agent_earnings < territory.scoutCost) return next;
+
+  next.agent_earnings -= territory.scoutCost;
   const takenNames = new Set(next.userPlayers.map((player) => player.name));
   next.offerRecruits = [
-    createPlayer(next.userName, territoryId, takenNames),
-    createPlayer(next.userName, territoryId, takenNames),
-    createPlayer(next.userName, territoryId, takenNames),
+    createPlayer(next.userName, territory.id, takenNames),
+    createPlayer(next.userName, territory.id, takenNames),
+    createPlayer(next.userName, territory.id, takenNames),
   ];
   next.screen = "offer-recruits";
   return next;
@@ -238,7 +244,7 @@ export const canRunExhibition = (state: GameState): boolean => state.week < 48;
 export const getTrainingEligiblePlayers = (state: GameState): Player[] =>
   state.userPlayers.filter((player) => player.age <= 27 && player.injury_weeks === 0);
 
-export const territoryNames = TERRITORIES.map((territory) => territory.name);
+export const territoryRecruitOptions = RECRUIT_TERRITORY_OPTIONS;
 
 export const trainingOptions = TRAINING_OPTIONS;
 

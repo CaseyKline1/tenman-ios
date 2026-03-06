@@ -28,7 +28,7 @@ import {
   skipToNextYear,
   skipToWeek,
   startNewGame,
-  territoryNames,
+  territoryRecruitOptions,
   trainPlayers,
   trainingOptions,
 } from "./src/engine/gameEngine";
@@ -176,8 +176,9 @@ export default function App() {
       case "recruit-territories":
         return (
           <RecruitTerritoriesScreen
-            territoryNames={territoryNames}
-            onSelectTerritory={(territoryIndex) => setState((prev) => seeRecruits(prev, territoryIndex))}
+            territories={territoryRecruitOptions}
+            cash={state.agent_earnings}
+            onSelectTerritory={(territoryId) => setState((prev) => seeRecruits(prev, territoryId))}
             onMenu={() => go("menu")}
           />
         );
