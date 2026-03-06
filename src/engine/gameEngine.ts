@@ -1,5 +1,6 @@
 import {
   GameState,
+  InjuryAlert,
   JuniorTournament,
   Player,
   PlayerTournamentEligibility,
@@ -943,12 +944,15 @@ const checkForInjury = (player: Player) => {
   if (Math.random() < injuryChance) {
     const weeks = randomInt(1, 12);
     player.injury_weeks += weeks;
+    return true;
   }
+  return false;
 };
 
-const applyWeeklyPlayerProgress = (player: Player) => {
+const applyWeeklyPlayerProgress = (player: Player): InjuryAlert | null => {
+  const wasHealthy = player.injury_weeks === 0;
   player.injury_weeks = Math.max(0, player.injury_weeks - 1);
-  checkForInjury(player);
+  const injuredThisWeek = checkForInjury(player);
   player.energy = player.junior
     ? clamp(player.energy + 7, 1, 100)
     : clamp(Math.max(Math.pow(100 - player.energy, 0.8), player.energy + 11), 1, 100);
@@ -956,6 +960,15 @@ const applyWeeklyPlayerProgress = (player: Player) => {
   player.hard_heat = Math.pow(player.hard_heat, 2 / 3);
   player.clay_heat = Math.pow(player.clay_heat, 2 / 3);
   player.grass_heat = Math.pow(player.grass_heat, 2 / 3);
+
+  if (wasHealthy && injuredThisWeek) {
+    return {
+      player_id: player.player_id,
+      player_name: player.name,
+      weeks_out: player.injury_weeks,
+    };
+  }
+  return null;
 };
 
 export const createInitialState = (): GameState => ({
@@ -967,6 +980,7 @@ export const createInitialState = (): GameState => ({
   userPlayers: [],
   offerRecruits: [],
   lastTournamentResults: [],
+  injuryAlerts: [],
   screen: "landing",
 });
 
@@ -979,6 +993,7 @@ export const startNewGame = (userName: string): GameState => ({
   userPlayers: [],
   offerRecruits: [],
   lastTournamentResults: [],
+  injuryAlerts: [],
   screen: "recruit-territories",
 });
 
@@ -1135,6 +1150,7 @@ export const enterTournaments = (
 export const advanceWeek = (state: GameState): GameState => {
   const next = cloneState(state);
   const previousWeek = next.week;
+  const injuryAlerts: InjuryAlert[] = [];
 
   if (!isCurrentWeekTournamentProcessed(next)) {
     resetSkippedTournamentPoints(next.userPlayers, previousWeek, previousWeek);
@@ -1143,7 +1159,8 @@ export const advanceWeek = (state: GameState): GameState => {
 
   next.week += 1;
   for (const player of next.userPlayers) {
-    applyWeeklyPlayerProgress(player);
+    const injury = applyWeeklyPlayerProgress(player);
+    if (injury) injuryAlerts.push(injury);
   }
 
   if (next.week > 52) {
@@ -1154,7 +1171,16 @@ export const advanceWeek = (state: GameState): GameState => {
 
   refreshStandings(next.userPlayers, true);
   markCurrentWeekUnprocessed(next);
-  next.screen = previousWeek === 52 ? "training" : "choose-tournament";
+  const targetScreen = previousWeek === 52 ? "training" : "choose-tournament";
+  if (injuryAlerts.length > 0) {
+    next.injuryAlerts = injuryAlerts;
+    next.postInjuryAlertScreen = targetScreen;
+    next.screen = "injury-alert";
+  } else {
+    next.injuryAlerts = [];
+    next.postInjuryAlertScreen = undefined;
+    next.screen = targetScreen;
+  }
   return next;
 };
 
@@ -1196,13 +1222,15 @@ export const trainPlayers = (state: GameState, choices: Record<number, number>):
 export const skipToWeek = (state: GameState, week: number): GameState => {
   const next = cloneState(state);
   if (week <= next.week || week > 52) return next;
+  const injuryAlerts: InjuryAlert[] = [];
 
   const startWeek = next.week;
   const skipStartWeek = isCurrentWeekTournamentProcessed(next) ? startWeek + 1 : startWeek;
   const weeksToAdvance = week - startWeek;
   for (let i = 0; i < weeksToAdvance; i += 1) {
     for (const player of next.userPlayers) {
-      applyWeeklyPlayerProgress(player);
+      const injury = applyWeeklyPlayerProgress(player);
+      if (injury) injuryAlerts.push(injury);
     }
   }
 
@@ -1210,7 +1238,15 @@ export const skipToWeek = (state: GameState, week: number): GameState => {
   next.week = week;
   markCurrentWeekUnprocessed(next);
   refreshStandings(next.userPlayers);
-  next.screen = "choose-tournament";
+  if (injuryAlerts.length > 0) {
+    next.injuryAlerts = injuryAlerts;
+    next.postInjuryAlertScreen = "choose-tournament";
+    next.screen = "injury-alert";
+  } else {
+    next.injuryAlerts = [];
+    next.postInjuryAlertScreen = undefined;
+    next.screen = "choose-tournament";
+  }
   return next;
 };
 
@@ -1218,11 +1254,13 @@ export const skipToNextYear = (state: GameState): GameState => {
   const next = cloneState(state);
   const oldWeek = next.week;
   const skipStartWeek = isCurrentWeekTournamentProcessed(next) ? oldWeek + 1 : oldWeek;
+  const injuryAlerts: InjuryAlert[] = [];
 
   const weeksToAdvance = 53 - oldWeek;
   for (let i = 0; i < weeksToAdvance; i += 1) {
     for (const player of next.userPlayers) {
-      applyWeeklyPlayerProgress(player);
+      const injury = applyWeeklyPlayerProgress(player);
+      if (injury) injuryAlerts.push(injury);
     }
   }
 
@@ -1233,7 +1271,23 @@ export const skipToNextYear = (state: GameState): GameState => {
   endOfYear(next);
   markCurrentWeekUnprocessed(next);
   refreshStandings(next.userPlayers);
-  next.screen = "training";
+  if (injuryAlerts.length > 0) {
+    next.injuryAlerts = injuryAlerts;
+    next.postInjuryAlertScreen = "training";
+    next.screen = "injury-alert";
+  } else {
+    next.injuryAlerts = [];
+    next.postInjuryAlertScreen = undefined;
+    next.screen = "training";
+  }
+  return next;
+};
+
+export const dismissInjuryAlerts = (state: GameState): GameState => {
+  const next = cloneState(state);
+  next.injuryAlerts = [];
+  next.screen = next.postInjuryAlertScreen ?? "menu";
+  next.postInjuryAlertScreen = undefined;
   return next;
 };
 

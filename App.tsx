@@ -14,6 +14,7 @@ import {
   advanceWeek,
   canRunExhibition,
   createInitialState,
+  dismissInjuryAlerts,
   enterTournaments,
   exhibitionFocuses,
   getAvailableTournaments,
@@ -88,12 +89,6 @@ const MiniStat = ({
   </View>
 );
 
-const SurfaceTile = ({ surface }: { surface: Surface }) => (
-  <View style={[styles.surfaceTile, styles[`surfaceTile_${surface}`]]}>
-    <Text style={[styles.surfaceTileText, styles[`surfaceTileText_${surface}`]]}>{surface.toUpperCase()}</Text>
-  </View>
-);
-
 const PlayerCard = ({
   player,
   extra,
@@ -109,6 +104,13 @@ const PlayerCard = ({
     <Text style={styles.cardTitle}>
       <CountryFlag countryName={player.nationality} showName={false} /> {player.name}
     </Text>
+    {player.injury_weeks > 0 && (
+      <View style={styles.injuryBanner}>
+        <Text style={styles.injuryBannerText}>
+          Injured: out {player.injury_weeks} {player.injury_weeks === 1 ? "week" : "weeks"}
+        </Text>
+      </View>
+    )}
     <View style={styles.rowWrap}>
       <MiniStat label="Age" value={player.age} />
       <MiniStat label="Overall" value={toInt(player.overall)} />
@@ -321,10 +323,6 @@ export default function App() {
             <View key={tournament.name} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
               <Text style={styles.cardTitle}>{tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <View style={styles.surfaceRow}>
-                <Text style={styles.text}>Surface:</Text>
-                <SurfaceTile surface={tournament.surface} />
-              </View>
               <Text style={styles.text}>Level: {String(tournament.level)}</Text>
               <Text style={styles.text}>Points: {tournament.points}</Text>
               <Text style={styles.text}>Prize: {formatMoney(tournament.prize_money)}</Text>
@@ -385,6 +383,25 @@ export default function App() {
               }
             }}
           />
+        </View>
+      )}
+
+      {state.screen === "injury-alert" && (
+        <View style={styles.section}>
+          <Text style={styles.h2}>Injury Alert</Text>
+          {(state.injuryAlerts ?? []).length === 0 ? (
+            <Text style={styles.text}>No new injuries this week.</Text>
+          ) : (
+            state.injuryAlerts?.map((alert, index) => (
+              <View key={`${alert.player_id}-${index}`} style={[styles.card, styles.injuryAlertCard]}>
+                <Text style={styles.injuryAlertTitle}>{alert.player_name} has been injured.</Text>
+                <Text style={styles.injuryAlertText}>
+                  Injured: out {alert.weeks_out} {alert.weeks_out === 1 ? "week" : "weeks"}
+                </Text>
+              </View>
+            ))
+          )}
+          <Button label="Continue" onPress={() => setState((prev) => dismissInjuryAlerts(prev))} />
         </View>
       )}
 
@@ -558,10 +575,7 @@ export default function App() {
             <View key={`${tournament.week}-${tournament.name}`} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
               <Text style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <View style={styles.surfaceRow}>
-                <SurfaceTile surface={tournament.surface} />
-                <Text style={styles.text}>Level: {tournament.level}</Text>
-              </View>
+              <Text style={styles.text}>Level: {tournament.level}</Text>
               <Text style={styles.text}>Points {tournament.points} | Prize {formatMoney(tournament.prize_money)}</Text>
             </View>
           ))}
@@ -572,10 +586,7 @@ export default function App() {
             <View key={`${tournament.week}-${tournament.name}`} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
               <Text style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <View style={styles.surfaceRow}>
-                <SurfaceTile surface={tournament.surface} />
-                <Text style={styles.text}>Level: {tournament.level}</Text>
-              </View>
+              <Text style={styles.text}>Level: {tournament.level}</Text>
               <Text style={styles.text}>Points {tournament.points}</Text>
             </View>
           ))}
@@ -806,6 +817,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+  injuryBanner: {
+    backgroundColor: "#7f1d1d",
+    borderColor: "#ef4444",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  injuryBannerText: {
+    color: "#fee2e2",
+    fontSize: 13,
+    fontWeight: "700",
+  },
   rowWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -863,43 +887,6 @@ const styles = StyleSheet.create({
   miniStatValue_grass: {
     color: "#dcfce7",
   },
-  surfaceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  surfaceTile: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    alignSelf: "flex-start",
-  },
-  surfaceTile_hard: {
-    backgroundColor: "#1e40af",
-    borderColor: "#93c5fd",
-  },
-  surfaceTile_clay: {
-    backgroundColor: "#c2410c",
-    borderColor: "#fb923c",
-  },
-  surfaceTile_grass: {
-    backgroundColor: "#166534",
-    borderColor: "#4ade80",
-  },
-  surfaceTileText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  surfaceTileText_hard: {
-    color: "#e0f2fe",
-  },
-  surfaceTileText_clay: {
-    color: "#ffedd5",
-  },
-  surfaceTileText_grass: {
-    color: "#dcfce7",
-  },
   playerOption: {
     backgroundColor: "#0c1426",
     borderWidth: 1,
@@ -934,5 +921,19 @@ const styles = StyleSheet.create({
   error: {
     color: "#fca5a5",
     fontWeight: "700",
+  },
+  injuryAlertCard: {
+    borderColor: "#ef4444",
+    backgroundColor: "#450a0a",
+  },
+  injuryAlertTitle: {
+    color: "#fecaca",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  injuryAlertText: {
+    color: "#fee2e2",
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

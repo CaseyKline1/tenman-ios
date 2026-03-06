@@ -101,6 +101,7 @@ export type ScreenKey =
   | "offer-recruits"
   | "choose-tournament"
   | "tournament-results"
+  | "injury-alert"
   | "menu"
   | "retire-agent"
   | "view-senior-players"
@@ -116,6 +117,12 @@ export interface TournamentResult {
   lines: string[];
 }
 
+export interface InjuryAlert {
+  player_id: number;
+  player_name: string;
+  weeks_out: number;
+}
+
 export interface GameState {
   userName: string;
   agent_earnings: number;
@@ -127,6 +134,8 @@ export interface GameState {
   userPlayers: Player[];
   offerRecruits: Player[];
   lastTournamentResults: TournamentResult[];
+  injuryAlerts?: InjuryAlert[];
+  postInjuryAlertScreen?: ScreenKey;
   screen: ScreenKey;
 }
 
