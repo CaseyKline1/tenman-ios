@@ -1022,6 +1022,38 @@ const markCurrentWeekUnprocessed = (state: GameState) => {
   state.lastProcessedTournamentWeek = 0;
 };
 
+type EligibilityLockState = GameState & { tournamentEligibilityWeek?: number };
+
+const getEligibilityLockWeek = (state: GameState): number => (state as EligibilityLockState).tournamentEligibilityWeek ?? 0;
+
+const setEligibilityLockWeek = (state: GameState, week: number) => {
+  (state as EligibilityLockState).tournamentEligibilityWeek = week;
+};
+
+const clearEligibilityLockWeek = (state: GameState) => {
+  setEligibilityLockWeek(state, 0);
+};
+
+const lockTournamentEligibilityForWeek = (state: GameState) => {
+  if (getEligibilityLockWeek(state) === state.week) return;
+
+  const seniorTournaments = TOURNAMENT_SCHEDULE[state.week] ?? [];
+  for (const tournament of seniorTournaments) {
+    for (const player of state.userPlayers.filter((entry) => !entry.junior)) {
+      calcRequiredPoints(player, tournament as Tournament);
+    }
+  }
+
+  const juniorTournament = JUNIOR_TOURNAMENT_SCHEDULE[state.week];
+  if (juniorTournament) {
+    for (const player of state.userPlayers.filter((entry) => entry.junior)) {
+      calcRequiredPoints(player, juniorTournament as JuniorTournament);
+    }
+  }
+
+  setEligibilityLockWeek(state, state.week);
+};
+
 const improvePlayerAtYearEnd = (player: Player) => {
   const totalSeasonMatches = Math.max(1, player.season_record.wins + player.season_record.losses);
   const seasonWinRate = player.season_record.wins / totalSeasonMatches;
@@ -1180,6 +1212,7 @@ export const addRecruit = (state: GameState, playerId: number): GameState => {
     next.userPlayers.push(recruit);
   }
   next.offerRecruits = [];
+  lockTournamentEligibilityForWeek(next);
   next.screen = "choose-tournament";
   return next;
 };
@@ -1187,6 +1220,9 @@ export const addRecruit = (state: GameState, playerId: number): GameState => {
 export const skipRecruits = (state: GameState): GameState => {
   const next = cloneState(state);
   next.offerRecruits = [];
+  if (next.userPlayers.length > 0) {
+    lockTournamentEligibilityForWeek(next);
+  }
   next.screen = next.userPlayers.length > 0 ? "choose-tournament" : "recruit-territories";
   return next;
 };
@@ -1208,16 +1244,15 @@ export const promoteJunior = (state: GameState, playerId: number): GameState => 
 };
 
 export const getAvailableTournaments = (state: GameState): TournamentWithPlayers[] => {
-  const working = cloneState(state);
+  lockTournamentEligibilityForWeek(state);
 
-  const eligible = working.userPlayers.filter((player) => player.injury_weeks === 0);
+  const eligible = state.userPlayers.filter((player) => player.injury_weeks === 0);
   const result: TournamentWithPlayers[] = [];
 
-  const seniorTournaments = TOURNAMENT_SCHEDULE[working.week] ?? [];
+  const seniorTournaments = TOURNAMENT_SCHEDULE[state.week] ?? [];
   for (const tournament of seniorTournaments) {
     const players: PlayerTournamentEligibility[] = [];
-    for (const player of working.userPlayers.filter((entry) => !entry.junior)) {
-      calcRequiredPoints(player, tournament as Tournament);
+    for (const player of state.userPlayers.filter((entry) => !entry.junior)) {
       if (eligible.find((entry) => entry.player_id === player.player_id)) {
         players.push({
           player_id: player.player_id,
@@ -1237,11 +1272,10 @@ export const getAvailableTournaments = (state: GameState): TournamentWithPlayers
     result.push({ tournament: tournament as Tournament, players, isJunior: false });
   }
 
-  const juniorTournament = JUNIOR_TOURNAMENT_SCHEDULE[working.week];
+  const juniorTournament = JUNIOR_TOURNAMENT_SCHEDULE[state.week];
   if (juniorTournament) {
     const players: PlayerTournamentEligibility[] = [];
-    for (const player of working.userPlayers.filter((entry) => entry.junior)) {
-      calcRequiredPoints(player, juniorTournament as JuniorTournament);
+    for (const player of state.userPlayers.filter((entry) => entry.junior)) {
       if (eligible.find((entry) => entry.player_id === player.player_id)) {
         players.push({
           player_id: player.player_id,
@@ -1321,8 +1355,12 @@ export const advanceWeek = (state: GameState): GameState => {
   }
 
   refreshStandings(next.userPlayers, true);
+  clearEligibilityLockWeek(next);
   markCurrentWeekUnprocessed(next);
   const targetScreen = previousWeek === 52 ? "training" : "choose-tournament";
+  if (targetScreen === "choose-tournament") {
+    lockTournamentEligibilityForWeek(next);
+  }
   if (injuryAlerts.length > 0) {
     next.injuryAlerts = injuryAlerts;
     next.postInjuryAlertScreen = targetScreen;
@@ -1387,8 +1425,10 @@ export const skipToWeek = (state: GameState, week: number): GameState => {
 
   resetSkippedTournamentPoints(next.userPlayers, skipStartWeek, week - 1);
   next.week = week;
+  clearEligibilityLockWeek(next);
   markCurrentWeekUnprocessed(next);
   refreshStandings(next.userPlayers);
+  lockTournamentEligibilityForWeek(next);
   if (injuryAlerts.length > 0) {
     next.injuryAlerts = injuryAlerts;
     next.postInjuryAlertScreen = "choose-tournament";
@@ -1418,6 +1458,7 @@ export const skipToNextYear = (state: GameState): GameState => {
   resetSkippedTournamentPoints(next.userPlayers, skipStartWeek, 52);
   next.week = 1;
   next.year += 1;
+  clearEligibilityLockWeek(next);
 
   endOfYear(next);
   markCurrentWeekUnprocessed(next);
