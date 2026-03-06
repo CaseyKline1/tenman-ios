@@ -443,7 +443,6 @@ export default function App() {
               <Text style={styles.cardTitle}>{tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
               <Text style={styles.text}>Level: {formatTournamentLevel(String(tournament.level))}</Text>
-              <Text style={styles.text}>Points: {tournament.points}</Text>
               <Text style={styles.text}>Prize: {formatMoney(tournament.prize_money)}</Text>
 
               {players.length === 0 ? (
