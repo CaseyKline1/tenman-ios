@@ -301,6 +301,23 @@ type TrainingScreenProps = {
   onBack: () => void;
 };
 
+const getTrainingCurrentRating = (player: Player, optionIndex: number): number => {
+  if (optionIndex === 0) return player.overall;
+  if (optionIndex === 1) return player.serve;
+  if (optionIndex === 2) return player.stamina;
+  if (optionIndex === 3) return player.big_moments;
+  if (optionIndex === 4) return player.court_proficiencies.hard;
+  if (optionIndex === 5) return player.court_proficiencies.clay;
+  return player.court_proficiencies.grass;
+};
+
+const getTrainingOptionLabel = (option: string, optionIndex: number): string => {
+  if (optionIndex === 4) return "Hard";
+  if (optionIndex === 5) return "Clay";
+  if (optionIndex === 6) return "Grass";
+  return option;
+};
+
 export const TrainingScreen = ({
   trainingEligible,
   trainingChoices,
@@ -314,18 +331,25 @@ export const TrainingScreen = ({
     {trainingEligible.length === 0 && <PaperText style={styles.text}>No players are eligible for training this offseason.</PaperText>}
     {trainingEligible.map((player) => {
       const currentChoice = trainingChoices[player.player_id];
-      const label = currentChoice === undefined ? "Choose training" : trainingOptions[currentChoice];
+      const label = currentChoice === undefined
+        ? "Choose training"
+        : `${getTrainingOptionLabel(trainingOptions[currentChoice], currentChoice)} (${toInt(getTrainingCurrentRating(player, currentChoice))})`;
       return (
         <CardBlock key={player.player_id}>
           <PaperText style={styles.cardTitle}>{player.name}</PaperText>
-          <PaperText style={styles.text}>Age {player.age} | Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)}</PaperText>
+          <PaperText style={styles.text}>
+            Age {player.age} | Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)} | POT {player.potential_letter}
+          </PaperText>
           <PaperText style={styles.text}>Current training: {label}</PaperText>
           <View style={styles.rowButtons}>
             {trainingOptions.map((option, optionIndex) => (
               <Button
                 key={`${player.player_id}-${option}`}
-                label={option}
+                label={`${getTrainingOptionLabel(option, optionIndex)} (${toInt(getTrainingCurrentRating(player, optionIndex))})`}
                 variant={currentChoice === optionIndex ? "primary" : "secondary"}
+                compact
+                contentStyle={styles.trainingButtonContent}
+                labelStyle={styles.trainingButtonText}
                 onPress={() =>
                   setTrainingChoices((prev) => ({
                     ...prev,

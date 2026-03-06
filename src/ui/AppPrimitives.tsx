@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleProp, View, ViewStyle } from "react-native";
+import { StyleProp, TextStyle, View, ViewStyle } from "react-native";
 import {
   Button as PaperButton,
   Surface,
@@ -31,11 +31,19 @@ export const Button = ({
   onPress,
   variant = "primary",
   disabled = false,
+  compact = false,
+  style,
+  contentStyle,
+  labelStyle,
 }: {
   label: string;
   onPress: () => void;
   variant?: ButtonVariant;
   disabled?: boolean;
+  compact?: boolean;
+  style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
+  labelStyle?: StyleProp<TextStyle>;
 }) => {
   const config = buttonConfig[variant];
   return (
@@ -45,9 +53,10 @@ export const Button = ({
       textColor={config.textColor}
       onPress={onPress}
       disabled={disabled}
-      style={styles.button}
-      contentStyle={styles.buttonContent}
-      labelStyle={styles.buttonText}
+      compact={compact}
+      style={[styles.button, style]}
+      contentStyle={[styles.buttonContent, contentStyle]}
+      labelStyle={[styles.buttonText, labelStyle]}
     >
       {label}
     </PaperButton>

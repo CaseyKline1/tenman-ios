@@ -94,6 +94,13 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 14,
   },
+  trainingButtonContent: {
+    paddingVertical: 0,
+    paddingHorizontal: 6,
+  },
+  trainingButtonText: {
+    fontSize: 12,
+  },
   card: {
     backgroundColor: "#ffffff",
     borderRadius: 10,
