@@ -630,7 +630,7 @@ const runTournament = (
   return lines;
 };
 
-const rankSeniors = (players: Player[]) => {
+const rankSeniors = (players: Player[], countWeeksRankedOne: boolean = true) => {
   const sorted = [...players]
     .filter((p) => !p.junior)
     .sort((a, b) => b.points - a.points);
@@ -638,7 +638,7 @@ const rankSeniors = (players: Player[]) => {
   sorted.forEach((player, index) => {
     player.ranking = index + 1;
     player.best_ranking = Math.min(player.best_ranking, player.ranking);
-    if (player.ranking === 1) player.weeks_ranked_1 += 1;
+    if (countWeeksRankedOne && player.ranking === 1) player.weeks_ranked_1 += 1;
   });
 };
 
@@ -651,6 +651,14 @@ const rankJuniors = (players: Player[]) => {
     player.ranking = index + 1;
     player.best_junior_ranking = Math.min(player.best_junior_ranking, player.ranking);
   });
+};
+
+const refreshStandings = (players: Player[], countWeeksRankedOne: boolean = false) => {
+  for (const player of players) {
+    calculatePoints(player);
+  }
+  rankSeniors(players, countWeeksRankedOne);
+  rankJuniors(players);
 };
 
 const calcRequiredPoints = (player: Player, tournament: Tournament | JuniorTournament) => {
@@ -902,6 +910,7 @@ export const addRecruit = (state: GameState, playerId: number): GameState => {
   const exists = next.userPlayers.some((player) => player.player_id === playerId);
   if (!exists) {
     next.userPlayers.push(recruit);
+    refreshStandings(next.userPlayers);
   }
   next.offerRecruits = [];
   next.screen = "choose-tournament";
@@ -918,6 +927,7 @@ export const skipRecruits = (state: GameState): GameState => {
 export const removePlayer = (state: GameState, playerId: number): GameState => {
   const next = cloneState(state);
   next.userPlayers = next.userPlayers.filter((player) => player.player_id !== playerId);
+  refreshStandings(next.userPlayers);
   return next;
 };
 
@@ -928,16 +938,13 @@ export const promoteJunior = (state: GameState, playerId: number): GameState => 
   player.junior = false;
   player.ranking = 3000;
   player.weeks_ranked_1 = 0;
+  refreshStandings(next.userPlayers);
   return next;
 };
 
 export const getAvailableTournaments = (state: GameState): TournamentWithPlayers[] => {
   const working = cloneState(state);
-  for (const player of working.userPlayers) {
-    calculatePoints(player);
-  }
-  rankSeniors(working.userPlayers);
-  rankJuniors(working.userPlayers);
+  refreshStandings(working.userPlayers);
 
   const eligible = working.userPlayers.filter((player) => player.injury_weeks === 0);
   const result: TournamentWithPlayers[] = [];
@@ -1017,6 +1024,7 @@ export const enterTournaments = (
     output.push({ tournamentName: name, lines });
   }
 
+  refreshStandings(next.userPlayers);
   next.lastTournamentResults = output;
   next.screen = output.length ? "tournament-results" : "menu";
   return next;
@@ -1037,7 +1045,6 @@ export const advanceWeek = (state: GameState): GameState => {
     player.hard_heat = Math.pow(player.hard_heat, 2 / 3);
     player.clay_heat = Math.pow(player.clay_heat, 2 / 3);
     player.grass_heat = Math.pow(player.grass_heat, 2 / 3);
-    calculatePoints(player);
   }
 
   if (next.week > 52) {
@@ -1046,6 +1053,7 @@ export const advanceWeek = (state: GameState): GameState => {
     endOfYear(next);
   }
 
+  refreshStandings(next.userPlayers, true);
   next.screen = previousWeek === 52 ? "training" : "choose-tournament";
   return next;
 };
@@ -1097,6 +1105,7 @@ export const skipToWeek = (state: GameState, week: number): GameState => {
 
   resetSkippedTournamentPoints(next.userPlayers, next.week + 1, week);
   next.week = week;
+  refreshStandings(next.userPlayers);
   next.screen = "choose-tournament";
   return next;
 };
@@ -1118,6 +1127,7 @@ export const skipToNextYear = (state: GameState): GameState => {
   }
 
   endOfYear(next);
+  refreshStandings(next.userPlayers);
   next.screen = "training";
   return next;
 };
