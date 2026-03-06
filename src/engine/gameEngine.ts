@@ -472,6 +472,7 @@ const pvpMatch = (
   year: number,
   currentRound: number,
   rounds: number,
+  countAsOfficial: boolean = true,
 ): { winner: Player; loser: Player; line: string } => {
   let set = 1;
   let game = 1;
@@ -518,10 +519,12 @@ const pvpMatch = (
   const winner = p1Win ? player1 : player2;
   const loser = p1Win ? player2 : player1;
 
-  winner.season_record.wins += 1;
-  loser.season_record.losses += 1;
-  if (!winner.junior) winner.career_record.wins += 1;
-  if (!loser.junior) loser.career_record.losses += 1;
+  if (countAsOfficial) {
+    winner.season_record.wins += 1;
+    loser.season_record.losses += 1;
+    if (!winner.junior) winner.career_record.wins += 1;
+    if (!loser.junior) loser.career_record.losses += 1;
+  }
 
   adjustSurfaceGrowth(winner, tournament.surface);
 
@@ -1205,7 +1208,7 @@ export const playExhibitionMatch = (
     prize_money: 0,
   };
 
-  const match = pvpMatch(player1, player2, pseudoTournament, next.year, 1, 1);
+  const match = pvpMatch(player1, player2, pseudoTournament, next.year, 1, 1, false);
   const lines = [match.line, applyExhibitionFocus(player1, surface, focus1), applyExhibitionFocus(player2, surface, focus2)];
 
   player1.energy = clamp(player1.energy - 33, 1, 100);
