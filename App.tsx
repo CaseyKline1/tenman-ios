@@ -759,7 +759,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 6,
-    minWidth: 72,
+    flexBasis: "23%",
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 0,
   },
   miniStatLabel: {
     color: "#94a3b8",
