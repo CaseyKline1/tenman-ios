@@ -51,6 +51,20 @@ const roundLabel = (round: number, rounds: number, qualifying = false): string =
   return "final";
 };
 
+const topFinishLabel = (resultTop: number): string => {
+  const rounded = Math.max(1, Math.round(resultTop));
+  if (rounded <= 1) return "Champion";
+  if (rounded === 2) return "Runner-up";
+  if (rounded === 4) return "Semifinals";
+  if (rounded === 8) return "Quarterfinals";
+  if (rounded === 16) return "Round of 16";
+  if (rounded === 32) return "Round of 32";
+  if (rounded === 64) return "Round of 64";
+  if (rounded === 128) return "Round of 128";
+  if (rounded === 256) return "Round of 256";
+  return `Top ${rounded}`;
+};
+
 const cloneState = (state: GameState): GameState => JSON.parse(JSON.stringify(state));
 
 const makePotentialLetter = (potential: number): string => {
@@ -471,13 +485,13 @@ const updateBestResults = (player: Player, tournament: Tournament | JuniorTourna
     const prev = player.best_results[tournament.name] ?? Infinity;
     if (resultTop < prev) {
       player.best_results[tournament.name] = resultTop;
-      lines.push(`New best result for ${player.name} at ${tournament.name}: finished top ${resultTop}`);
+      lines.push(`New best result for ${player.name} at ${tournament.name}: ${topFinishLabel(resultTop)}`);
     }
   } else if (tournament.level === "junior_grand_slam" || tournament.level === "grade_a") {
     const prev = player.best_junior_results[tournament.name] ?? Infinity;
     if (resultTop < prev) {
       player.best_junior_results[tournament.name] = resultTop;
-      lines.push(`New best result for ${player.name} at ${tournament.name}: finished top ${resultTop}`);
+      lines.push(`New best result for ${player.name} at ${tournament.name}: ${topFinishLabel(resultTop)}`);
     }
   }
 };

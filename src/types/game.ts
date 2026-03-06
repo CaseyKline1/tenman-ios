@@ -106,6 +106,7 @@ export type ScreenKey =
   | "retire-agent"
   | "view-senior-players"
   | "view-junior-players"
+  | "view-player-details"
   | "training"
   | "remove-player"
   | "skip-ahead"
