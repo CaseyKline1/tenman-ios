@@ -1371,7 +1371,7 @@ export const skipToWeek = (state: GameState, week: number): GameState => {
     }
   }
 
-  resetSkippedTournamentPoints(next.userPlayers, skipStartWeek, week);
+  resetSkippedTournamentPoints(next.userPlayers, skipStartWeek, week - 1);
   next.week = week;
   markCurrentWeekUnprocessed(next);
   refreshStandings(next.userPlayers);
