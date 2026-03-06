@@ -49,6 +49,28 @@ const formatMoney = (value: number) =>
 
 const toInt = (value: number) => Math.round(value);
 
+const TOURNAMENT_LEVEL_LABELS: Record<string, string> = {
+  grand_slam: "Grand Slam",
+  masters: "ATP Masters 1000",
+  atp500: "ATP 500",
+  atp250: "ATP 250",
+  challenger125: "ATP Challenger 125",
+  challenger100: "ATP Challenger 100",
+  challenger75: "ATP Challenger 75",
+  junior_grand_slam: "Junior Grand Slam",
+  grade_a: "ITF Grade A",
+  grade_1: "ITF Grade 1",
+  grade_2: "ITF Grade 2",
+  grade_3: "ITF Grade 3",
+};
+
+const formatTournamentLevel = (level: string) =>
+  TOURNAMENT_LEVEL_LABELS[level] ??
+  level
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
 const Button = ({
   label,
   onPress,
@@ -323,7 +345,7 @@ export default function App() {
             <View key={tournament.name} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
               <Text style={styles.cardTitle}>{tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <Text style={styles.text}>Level: {String(tournament.level)}</Text>
+              <Text style={styles.text}>Level: {formatTournamentLevel(String(tournament.level))}</Text>
               <Text style={styles.text}>Points: {tournament.points}</Text>
               <Text style={styles.text}>Prize: {formatMoney(tournament.prize_money)}</Text>
 
@@ -575,7 +597,7 @@ export default function App() {
             <View key={`${tournament.week}-${tournament.name}`} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
               <Text style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <Text style={styles.text}>Level: {tournament.level}</Text>
+              <Text style={styles.text}>Level: {formatTournamentLevel(tournament.level)}</Text>
               <Text style={styles.text}>Points {tournament.points} | Prize {formatMoney(tournament.prize_money)}</Text>
             </View>
           ))}
@@ -586,7 +608,7 @@ export default function App() {
             <View key={`${tournament.week}-${tournament.name}`} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
               <Text style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <Text style={styles.text}>Level: {tournament.level}</Text>
+              <Text style={styles.text}>Level: {formatTournamentLevel(tournament.level)}</Text>
               <Text style={styles.text}>Points {tournament.points}</Text>
             </View>
           ))}
