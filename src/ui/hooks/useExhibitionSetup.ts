@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { ExhibitionFocus } from "../../data/recruiting";
-import { Surface } from "../../types/game";
+import { ScreenKey, Surface } from "../../types/game";
 
-export const useExhibitionSetup = (screen: string, week: number) => {
+export const useExhibitionSetup = (screen: ScreenKey, week: number) => {
   const [exhPlayer1, setExhPlayer1] = useState<number | null>(null);
   const [exhPlayer2, setExhPlayer2] = useState<number | null>(null);
   const [exhSurface, setExhSurface] = useState<Surface>("hard");

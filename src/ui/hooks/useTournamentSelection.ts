@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { PlayerTournamentEligibility, TournamentWithPlayers } from "../../types/game";
+import { PlayerTournamentEligibility, ScreenKey, TournamentWithPlayers } from "../../types/game";
 
 export const useTournamentSelection = (
-  screen: string,
+  screen: ScreenKey,
   availableTournaments: TournamentWithPlayers[],
 ) => {
   const [selectedByTournament, setSelectedByTournament] = useState<Record<string, number[]>>({});
