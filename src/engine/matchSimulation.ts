@@ -4,11 +4,14 @@ import { ENERGY_MAX, STAMINA_MAX } from "./engineConstants";
 import { roundLabel } from "./engineFormatting";
 import { clamp, randomBetween, randomInt } from "./random";
 
+const ENERGY_DRAIN_MULTIPLIER = 1.2;
+const EXHIBITION_ENERGY_DRAIN = 33 * ENERGY_DRAIN_MULTIPLIER;
+
 const useEnergy = (player: Player) => {
   const normalizedEnergy = clamp(player.energy / ENERGY_MAX, 0.01, 1);
   const effectiveStamina = clamp(player.stamina, 1, STAMINA_MAX);
   const staminaPenalty = Math.sqrt((100 - effectiveStamina) / 25);
-  const energyUsed = 0.15 / Math.sqrt(normalizedEnergy) * staminaPenalty;
+  const energyUsed = (0.15 / Math.sqrt(normalizedEnergy)) * staminaPenalty * ENERGY_DRAIN_MULTIPLIER;
   player.energy = clamp(player.energy - energyUsed, 0.01, ENERGY_MAX);
 };
 
@@ -308,8 +311,8 @@ export const simulateExhibitionMatch = (
   const match = pvpMatch(player1, player2, pseudoTournament, year, 1, 1, false);
   const lines = [match.line, applyExhibitionFocus(player1, surface, focus1), applyExhibitionFocus(player2, surface, focus2)];
 
-  player1.energy = clamp(player1.energy - 33, 1, ENERGY_MAX);
-  player2.energy = clamp(player2.energy - 33, 1, ENERGY_MAX);
+  player1.energy = clamp(player1.energy - EXHIBITION_ENERGY_DRAIN, 1, ENERGY_MAX);
+  player2.energy = clamp(player2.energy - EXHIBITION_ENERGY_DRAIN, 1, ENERGY_MAX);
 
   return lines;
 };
