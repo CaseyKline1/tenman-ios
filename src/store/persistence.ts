@@ -33,6 +33,7 @@ const hydratePlayer = (player: Player | Record<string, unknown>): Player => {
   const raw = player as Player & Record<string, unknown>;
   return {
     ...raw,
+    recruited_from: typeof raw.recruited_from === "string" ? raw.recruited_from : "Unknown",
     career_earnings: normalizeCurrency(raw.career_earnings),
     earnings_share: normalizeEarningsShare(raw.earnings_share, raw.player_id),
     stamina: normalizeStamina(raw.stamina),

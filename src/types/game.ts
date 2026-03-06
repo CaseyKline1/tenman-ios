@@ -49,6 +49,7 @@ export interface RecordStat {
 
 export interface Player {
   player_id: number;
+  recruited_from: string;
   name: string;
   age: number;
   nationality: string;

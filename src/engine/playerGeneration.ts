@@ -61,6 +61,7 @@ export const createPlayer = (userName: string, territoryId: number, takenNames: 
   const junior = age <= 18;
   const player: Player = {
     player_id: randomInt(1_000_000, 9_999_999_999),
+    recruited_from: territory.name,
     name: generateUniqueName(nationality, takenNames),
     age,
     nationality,
