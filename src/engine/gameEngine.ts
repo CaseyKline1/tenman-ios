@@ -804,6 +804,46 @@ const resetSkippedTournamentPoints = (players: Player[], startWeek: number, endW
   }
 };
 
+const hasRecordedResultsForWeek = (players: Player[], week: number): boolean => {
+  const seniorTournamentNames = (TOURNAMENT_SCHEDULE[week] ?? []).map((tournament) => tournament.name);
+  const juniorTournamentName = JUNIOR_TOURNAMENT_SCHEDULE[week]?.name;
+
+  for (const player of players) {
+    if (player.junior) {
+      if (juniorTournamentName && player.annual_results[juniorTournamentName] !== undefined) {
+        return true;
+      }
+      continue;
+    }
+
+    for (const tournamentName of seniorTournamentNames) {
+      if (player.annual_results[tournamentName] !== undefined) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+const isCurrentWeekTournamentProcessed = (state: GameState): boolean => {
+  if (state.lastProcessedTournamentWeek === state.week) return true;
+  if (state.lastProcessedTournamentWeek !== undefined) return false;
+
+  // Legacy save fallback: infer whether this week was already processed.
+  const inferredProcessed = hasRecordedResultsForWeek(state.userPlayers, state.week);
+  state.lastProcessedTournamentWeek = inferredProcessed ? state.week : 0;
+  return inferredProcessed;
+};
+
+const markCurrentWeekProcessed = (state: GameState) => {
+  state.lastProcessedTournamentWeek = state.week;
+};
+
+const markCurrentWeekUnprocessed = (state: GameState) => {
+  state.lastProcessedTournamentWeek = 0;
+};
+
 const improvePlayerAtYearEnd = (player: Player) => {
   const totalSeasonMatches = Math.max(1, player.season_record.wins + player.season_record.losses);
   const seasonWinRate = player.season_record.wins / totalSeasonMatches;
@@ -901,6 +941,7 @@ export const createInitialState = (): GameState => ({
   userName: "",
   week: 1,
   year: 2025,
+  lastProcessedTournamentWeek: 0,
   userPlayers: [],
   offerRecruits: [],
   lastTournamentResults: [],
@@ -911,6 +952,7 @@ export const startNewGame = (userName: string): GameState => ({
   userName,
   week: 1,
   year: 2025,
+  lastProcessedTournamentWeek: 0,
   userPlayers: [],
   offerRecruits: [],
   lastTournamentResults: [],
@@ -1045,6 +1087,9 @@ export const enterTournaments = (
   const juniorTournament = JUNIOR_TOURNAMENT_SCHEDULE[next.week];
   if (juniorTournament) tournamentsByName[juniorTournament.name] = juniorTournament;
 
+  // Defend this week's points by default; selected participants overwrite with their results.
+  resetSkippedTournamentPoints(next.userPlayers, next.week, next.week);
+
   const output: TournamentResult[] = [];
   for (const [name, playerIds] of Object.entries(selectedByTournament)) {
     const tournament = tournamentsByName[name];
@@ -1056,6 +1101,7 @@ export const enterTournaments = (
     output.push({ tournamentName: name, lines });
   }
 
+  markCurrentWeekProcessed(next);
   refreshStandings(next.userPlayers);
   next.lastTournamentResults = output;
   next.screen = output.length ? "tournament-results" : "menu";
@@ -1065,6 +1111,11 @@ export const enterTournaments = (
 export const advanceWeek = (state: GameState): GameState => {
   const next = cloneState(state);
   const previousWeek = next.week;
+
+  if (!isCurrentWeekTournamentProcessed(next)) {
+    resetSkippedTournamentPoints(next.userPlayers, previousWeek, previousWeek);
+    markCurrentWeekProcessed(next);
+  }
 
   next.week += 1;
   for (const player of next.userPlayers) {
@@ -1078,6 +1129,7 @@ export const advanceWeek = (state: GameState): GameState => {
   }
 
   refreshStandings(next.userPlayers, true);
+  markCurrentWeekUnprocessed(next);
   next.screen = previousWeek === 52 ? "training" : "choose-tournament";
   return next;
 };
@@ -1122,6 +1174,7 @@ export const skipToWeek = (state: GameState, week: number): GameState => {
   if (week <= next.week || week > 52) return next;
 
   const startWeek = next.week;
+  const skipStartWeek = isCurrentWeekTournamentProcessed(next) ? startWeek + 1 : startWeek;
   const weeksToAdvance = week - startWeek;
   for (let i = 0; i < weeksToAdvance; i += 1) {
     for (const player of next.userPlayers) {
@@ -1129,8 +1182,9 @@ export const skipToWeek = (state: GameState, week: number): GameState => {
     }
   }
 
-  resetSkippedTournamentPoints(next.userPlayers, startWeek + 1, week);
+  resetSkippedTournamentPoints(next.userPlayers, skipStartWeek, week);
   next.week = week;
+  markCurrentWeekUnprocessed(next);
   refreshStandings(next.userPlayers);
   next.screen = "choose-tournament";
   return next;
@@ -1139,6 +1193,7 @@ export const skipToWeek = (state: GameState, week: number): GameState => {
 export const skipToNextYear = (state: GameState): GameState => {
   const next = cloneState(state);
   const oldWeek = next.week;
+  const skipStartWeek = isCurrentWeekTournamentProcessed(next) ? oldWeek + 1 : oldWeek;
 
   const weeksToAdvance = 53 - oldWeek;
   for (let i = 0; i < weeksToAdvance; i += 1) {
@@ -1147,11 +1202,12 @@ export const skipToNextYear = (state: GameState): GameState => {
     }
   }
 
-  resetSkippedTournamentPoints(next.userPlayers, oldWeek + 1, 52);
+  resetSkippedTournamentPoints(next.userPlayers, skipStartWeek, 52);
   next.week = 1;
   next.year += 1;
 
   endOfYear(next);
+  markCurrentWeekUnprocessed(next);
   refreshStandings(next.userPlayers);
   next.screen = "training";
   return next;

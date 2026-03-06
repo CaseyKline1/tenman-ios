@@ -118,6 +118,9 @@ export interface GameState {
   userName: string;
   week: number;
   year: number;
+  // 0 means current week tournaments are not processed yet.
+  // Otherwise this stores the processed week number.
+  lastProcessedTournamentWeek?: number;
   userPlayers: Player[];
   offerRecruits: Player[];
   lastTournamentResults: TournamentResult[];
