@@ -396,13 +396,13 @@ export default function App() {
             <PlayerCard
               key={player.player_id}
               player={player}
+              inlineExtraStat={<MiniStat label="Slams" value={player.grand_slam_wins} />}
               extra={
                 <View style={styles.rowWrap}>
                   <MiniStat label="Points" value={toInt(player.points)} />
                   <MiniStat label="Wins" value={player.career_record.wins} />
                   <MiniStat label="Losses" value={player.career_record.losses} />
                   <MiniStat label="Titles" value={player.tournament_wins} />
-                  <MiniStat label="Slams" value={player.grand_slam_wins} />
                 </View>
               }
             />
