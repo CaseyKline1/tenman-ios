@@ -603,8 +603,10 @@ export default function App() {
 
       {state.screen === "menu" && (
         <Section>
-          <PaperText style={styles.h2}>Menu</PaperText>
-          <PaperText style={styles.text}>Lifetime Agent Earnings: {formatMoney(state.agent_earnings)}</PaperText>
+          <View style={styles.menuHeaderRow}>
+            <PaperText style={styles.h2}>Menu</PaperText>
+            <PaperText style={styles.menuCash}>Cash: {formatMoney(state.agent_earnings)}</PaperText>
+          </View>
           <Button label="Advance Week" onPress={() => setState((prev) => advanceWeek(prev))} />
           <Button label="View Senior Players" onPress={() => go("view-senior-players")} />
           <Button label="View Junior Players" onPress={() => go("view-junior-players")} />
@@ -1153,6 +1155,18 @@ const styles = StyleSheet.create({
     color: "#000000",
     fontSize: 22,
     fontWeight: "700",
+  },
+  menuHeaderRow: {
+    alignItems: "baseline",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    justifyContent: "space-between",
+  },
+  menuCash: {
+    color: "#111111",
+    fontSize: 16,
+    fontWeight: "600",
   },
   h3: {
     color: "#000000",
