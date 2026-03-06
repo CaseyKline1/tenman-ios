@@ -73,10 +73,24 @@ const Button = ({
   </Pressable>
 );
 
-const MiniStat = ({ label, value }: { label: string; value: string | number }) => (
-  <View style={styles.miniStat}>
-    <Text style={styles.miniStatLabel}>{label}</Text>
-    <Text style={styles.miniStatValue}>{value}</Text>
+const MiniStat = ({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string | number;
+  tone?: "default" | Surface;
+}) => (
+  <View style={[styles.miniStat, tone !== "default" && styles[`miniStat_${tone}`]]}>
+    <Text style={[styles.miniStatLabel, tone !== "default" && styles[`miniStatLabel_${tone}`]]}>{label}</Text>
+    <Text style={[styles.miniStatValue, tone !== "default" && styles[`miniStatValue_${tone}`]]}>{value}</Text>
+  </View>
+);
+
+const SurfaceTile = ({ surface }: { surface: Surface }) => (
+  <View style={[styles.surfaceTile, styles[`surfaceTile_${surface}`]]}>
+    <Text style={[styles.surfaceTileText, styles[`surfaceTileText_${surface}`]]}>{surface.toUpperCase()}</Text>
   </View>
 );
 
@@ -104,9 +118,9 @@ const PlayerCard = ({
       <MiniStat label="Serve" value={toInt(player.serve)} />
       <MiniStat label="Stamina" value={toInt(player.stamina)} />
       <MiniStat label="Clutch" value={toInt(player.big_moments)} />
-      <MiniStat label="Hard" value={toInt(player.court_proficiencies.hard)} />
-      <MiniStat label="Clay" value={toInt(player.court_proficiencies.clay)} />
-      <MiniStat label="Grass" value={toInt(player.court_proficiencies.grass)} />
+      <MiniStat label="Hard" value={toInt(player.court_proficiencies.hard)} tone="hard" />
+      <MiniStat label="Clay" value={toInt(player.court_proficiencies.clay)} tone="clay" />
+      <MiniStat label="Grass" value={toInt(player.court_proficiencies.grass)} tone="grass" />
       {inlineExtraStat}
     </View>
     {extra}
@@ -304,10 +318,13 @@ export default function App() {
         <View style={styles.section}>
           <Text style={styles.h2}>Choose Tournaments</Text>
           {availableTournaments.map(({ tournament, players }) => (
-            <View key={tournament.name} style={styles.card}>
+            <View key={tournament.name} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
               <Text style={styles.cardTitle}>{tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <Text style={styles.text}>Surface: {tournament.surface}</Text>
+              <View style={styles.surfaceRow}>
+                <Text style={styles.text}>Surface:</Text>
+                <SurfaceTile surface={tournament.surface} />
+              </View>
               <Text style={styles.text}>Level: {String(tournament.level)}</Text>
               <Text style={styles.text}>Points: {tournament.points}</Text>
               <Text style={styles.text}>Prize: {formatMoney(tournament.prize_money)}</Text>
@@ -400,8 +417,8 @@ export default function App() {
               extra={
                 <View style={styles.rowWrap}>
                   <MiniStat label="Points" value={toInt(player.points)} />
-                  <MiniStat label="Wins" value={player.career_record.wins} />
-                  <MiniStat label="Losses" value={player.career_record.losses} />
+                  <MiniStat label="Season" value={`${player.season_record.wins}-${player.season_record.losses}`} />
+                  <MiniStat label="Career" value={`${player.career_record.wins}-${player.career_record.losses}`} />
                   <MiniStat label="Titles" value={player.tournament_wins} />
                 </View>
               }
@@ -507,14 +524,20 @@ export default function App() {
 
       {state.screen === "view-tournament-schedule" && (
         <View style={styles.section}>
+          <View style={styles.topLeftAction}>
+            <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
+          </View>
           <Text style={styles.h2}>Tournament Schedule</Text>
           <Text style={styles.h3}>Senior (next 5 weeks)</Text>
           {schedule.senior.length === 0 && <Text style={styles.text}>No upcoming senior tournaments.</Text>}
           {schedule.senior.map((tournament) => (
-            <View key={`${tournament.week}-${tournament.name}`} style={styles.card}>
+            <View key={`${tournament.week}-${tournament.name}`} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
               <Text style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <Text style={styles.text}>{tournament.surface} | {tournament.level}</Text>
+              <View style={styles.surfaceRow}>
+                <SurfaceTile surface={tournament.surface} />
+                <Text style={styles.text}>Level: {tournament.level}</Text>
+              </View>
               <Text style={styles.text}>Points {tournament.points} | Prize {formatMoney(tournament.prize_money)}</Text>
             </View>
           ))}
@@ -522,10 +545,13 @@ export default function App() {
           <Text style={styles.h3}>Junior (next 10 weeks)</Text>
           {schedule.junior.length === 0 && <Text style={styles.text}>No upcoming junior tournaments.</Text>}
           {schedule.junior.map((tournament) => (
-            <View key={`${tournament.week}-${tournament.name}`} style={styles.card}>
+            <View key={`${tournament.week}-${tournament.name}`} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
               <Text style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</Text>
               <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <Text style={styles.text}>{tournament.surface} | {tournament.level}</Text>
+              <View style={styles.surfaceRow}>
+                <SurfaceTile surface={tournament.surface} />
+                <Text style={styles.text}>Level: {tournament.level}</Text>
+              </View>
               <Text style={styles.text}>Points {tournament.points}</Text>
             </View>
           ))}
@@ -706,6 +732,9 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
+  topLeftAction: {
+    alignSelf: "flex-start",
+  },
   button: {
     borderRadius: 8,
     paddingHorizontal: 12,
@@ -742,6 +771,18 @@ const styles = StyleSheet.create({
     padding: 10,
     gap: 6,
   },
+  cardSurface_hard: {
+    borderColor: "#60a5fa",
+    backgroundColor: "#112f66",
+  },
+  cardSurface_clay: {
+    borderColor: "#fb923c",
+    backgroundColor: "#3f2415",
+  },
+  cardSurface_grass: {
+    borderColor: "#4ade80",
+    backgroundColor: "#132a20",
+  },
   cardTitle: {
     color: "#e2e8f0",
     fontSize: 16,
@@ -762,14 +803,84 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minWidth: 0,
   },
+  miniStat_hard: {
+    backgroundColor: "#1e40af",
+    borderWidth: 1,
+    borderColor: "#93c5fd",
+  },
+  miniStat_clay: {
+    backgroundColor: "#c2410c",
+    borderWidth: 1,
+    borderColor: "#fdba74",
+  },
+  miniStat_grass: {
+    backgroundColor: "#166534",
+    borderWidth: 1,
+    borderColor: "#86efac",
+  },
   miniStatLabel: {
     color: "#94a3b8",
     fontSize: 11,
+  },
+  miniStatLabel_hard: {
+    color: "#dbeafe",
+  },
+  miniStatLabel_clay: {
+    color: "#fed7aa",
+  },
+  miniStatLabel_grass: {
+    color: "#bbf7d0",
   },
   miniStatValue: {
     color: "#f1f5f9",
     fontSize: 13,
     fontWeight: "700",
+  },
+  miniStatValue_hard: {
+    color: "#eff6ff",
+  },
+  miniStatValue_clay: {
+    color: "#fff7ed",
+  },
+  miniStatValue_grass: {
+    color: "#dcfce7",
+  },
+  surfaceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  surfaceTile: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    alignSelf: "flex-start",
+  },
+  surfaceTile_hard: {
+    backgroundColor: "#1e40af",
+    borderColor: "#93c5fd",
+  },
+  surfaceTile_clay: {
+    backgroundColor: "#c2410c",
+    borderColor: "#fb923c",
+  },
+  surfaceTile_grass: {
+    backgroundColor: "#166534",
+    borderColor: "#4ade80",
+  },
+  surfaceTileText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  surfaceTileText_hard: {
+    color: "#e0f2fe",
+  },
+  surfaceTileText_clay: {
+    color: "#ffedd5",
+  },
+  surfaceTileText_grass: {
+    color: "#dcfce7",
   },
   playerOption: {
     backgroundColor: "#0c1426",
