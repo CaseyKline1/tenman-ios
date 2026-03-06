@@ -248,7 +248,6 @@ export default function App() {
 
   return (
     <ScrollView style={styles.app} contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Tenman iOS</Text>
       <Text style={styles.subtitle}>{getWeeklyHeader(state)}</Text>
 
       {state.screen === "landing" && (
@@ -679,12 +678,6 @@ const styles = StyleSheet.create({
   loadingText: {
     color: "#dbeafe",
     fontSize: 16,
-  },
-  title: {
-    color: "#e0f2fe",
-    fontSize: 30,
-    fontWeight: "800",
-    textAlign: "center",
   },
   subtitle: {
     color: "#93c5fd",
