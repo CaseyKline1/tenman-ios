@@ -1,13 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
   ScrollView,
+  StyleProp,
   StyleSheet,
-  Text,
-  TextInput,
+  ViewStyle,
   View,
 } from "react-native";
+import {
+  ActivityIndicator as PaperActivityIndicator,
+  Button as PaperButton,
+  MD3LightTheme,
+  Provider as PaperProvider,
+  Surface,
+  Text as PaperText,
+  TextInput as PaperTextInput,
+  TouchableRipple,
+} from "react-native-paper";
 import { CountryFlag } from "./src/components/CountryFlag";
 import {
   addRecruit,
@@ -38,7 +46,7 @@ import {
 } from "./src/engine/gameEngine";
 import { clearGameState, loadGameState, saveGameState } from "./src/store/persistence";
 import { ExhibitionFocus, QUALIFICATION_LABELS } from "./src/data/recruiting";
-import { GameState, Player, PlayerTournamentEligibility, ScreenKey, Surface, TournamentWithPlayers } from "./src/types/game";
+import { GameState, Player, PlayerTournamentEligibility, ScreenKey, Surface as CourtSurface, TournamentWithPlayers } from "./src/types/game";
 
 const formatMoney = (value: number) =>
   new Intl.NumberFormat("en-US", {
@@ -121,6 +129,38 @@ const formatYears = (years: number[]): string => [...years]
   .sort((a, b) => a - b)
   .join(", ");
 
+const paperTheme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    background: "#e9eef5",
+    surface: "#f5f8fc",
+    primary: "#111827",
+    onPrimary: "#ffffff",
+    secondaryContainer: "#f3f4f6",
+    onSecondaryContainer: "#111827",
+    error: "#ef4444",
+    onError: "#ffffff",
+    outline: "#cfd8e3",
+  },
+};
+
+type ButtonVariant = "primary" | "secondary" | "danger" | "gold";
+
+const buttonConfig: Record<
+  ButtonVariant,
+  {
+    mode: "contained" | "contained-tonal" | "outlined";
+    buttonColor?: string;
+    textColor?: string;
+  }
+> = {
+  primary: { mode: "contained" },
+  secondary: { mode: "contained-tonal" },
+  danger: { mode: "contained", buttonColor: "#ef4444", textColor: "#ffffff" },
+  gold: { mode: "contained", buttonColor: "#fbbf24", textColor: "#111827" },
+};
+
 const Button = ({
   label,
   onPress,
@@ -129,21 +169,42 @@ const Button = ({
 }: {
   label: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "danger" | "gold";
+  variant?: ButtonVariant;
   disabled?: boolean;
+}) => {
+  const config = buttonConfig[variant];
+  return (
+    <PaperButton
+      mode={config.mode}
+      buttonColor={config.buttonColor}
+      textColor={config.textColor}
+      onPress={onPress}
+      disabled={disabled}
+      style={styles.button}
+      contentStyle={styles.buttonContent}
+      labelStyle={styles.buttonText}
+    >
+      {label}
+    </PaperButton>
+  );
+};
+
+const Section = ({ children }: { children: React.ReactNode }) => (
+  <Surface style={styles.section} elevation={1}>
+    {children}
+  </Surface>
+);
+
+const CardBlock = ({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
 }) => (
-  <Pressable
-    disabled={disabled}
-    onPress={onPress}
-    style={({ pressed }) => [
-      styles.button,
-      styles[`button_${variant}`],
-      disabled && styles.buttonDisabled,
-      pressed && !disabled && styles.buttonPressed,
-    ]}
-  >
-    <Text style={styles.buttonText}>{label}</Text>
-  </Pressable>
+  <Surface style={[styles.card, style]} elevation={1}>
+    {children}
+  </Surface>
 );
 
 const MiniStat = ({
@@ -153,12 +214,12 @@ const MiniStat = ({
 }: {
   label: string;
   value: string | number;
-  tone?: "default" | Surface;
+  tone?: "default" | CourtSurface;
 }) => (
-  <View style={[styles.miniStat, tone !== "default" && styles[`miniStat_${tone}`]]}>
-    <Text style={[styles.miniStatLabel, tone !== "default" && styles[`miniStatLabel_${tone}`]]}>{label}</Text>
-    <Text style={[styles.miniStatValue, tone !== "default" && styles[`miniStatValue_${tone}`]]}>{value}</Text>
-  </View>
+  <Surface style={[styles.miniStat, tone !== "default" && styles[`miniStat_${tone}`]]} elevation={0}>
+    <PaperText style={[styles.miniStatLabel, tone !== "default" && styles[`miniStatLabel_${tone}`]]}>{label}</PaperText>
+    <PaperText style={[styles.miniStatValue, tone !== "default" && styles[`miniStatValue_${tone}`]]}>{value}</PaperText>
+  </Surface>
 );
 
 const DetailStatRow = ({
@@ -173,7 +234,7 @@ const DetailStatRow = ({
   compact?: boolean;
 }) => (
   <View style={[styles.detailRow, compact && styles.detailSubRow]}>
-    <Text
+    <PaperText
       style={[
         styles.detailRowLabel,
         emphasizeLabel && styles.detailRowLabelStrong,
@@ -184,15 +245,15 @@ const DetailStatRow = ({
       minimumFontScale={0.72}
     >
       {label}
-    </Text>
-    <Text
+    </PaperText>
+    <PaperText
       style={[styles.detailRowValue, compact && styles.detailSubRowValue]}
       numberOfLines={1}
       adjustsFontSizeToFit
       minimumFontScale={0.75}
     >
       {value}
-    </Text>
+    </PaperText>
   </View>
 );
 
@@ -207,15 +268,15 @@ const PlayerCard = ({
   action?: React.ReactNode;
   inlineExtraStat?: React.ReactNode;
 }) => (
-  <View style={styles.card}>
-    <Text style={styles.cardTitle}>
+  <CardBlock>
+    <PaperText style={styles.cardTitle}>
       <CountryFlag countryName={player.nationality} showName={false} /> {player.name}
-    </Text>
+    </PaperText>
     {player.injury_weeks > 0 && (
       <View style={styles.injuryBanner}>
-        <Text style={styles.injuryBannerText}>
+        <PaperText style={styles.injuryBannerText}>
           Injured: out {player.injury_weeks} {player.injury_weeks === 1 ? "week" : "weeks"}
-        </Text>
+        </PaperText>
       </View>
     )}
     <View style={styles.rowWrap}>
@@ -235,7 +296,7 @@ const PlayerCard = ({
     </View>
     {extra}
     {action}
-  </View>
+  </CardBlock>
 );
 
 export default function App() {
@@ -250,7 +311,7 @@ export default function App() {
 
   const [exhPlayer1, setExhPlayer1] = useState<number | null>(null);
   const [exhPlayer2, setExhPlayer2] = useState<number | null>(null);
-  const [exhSurface, setExhSurface] = useState<Surface>("hard");
+  const [exhSurface, setExhSurface] = useState<CourtSurface>("hard");
   const [exhFocus1, setExhFocus1] = useState<ExhibitionFocus>("court");
   const [exhFocus2, setExhFocus2] = useState<ExhibitionFocus>("court");
   const [exhLines, setExhLines] = useState<string[] | null>(null);
@@ -359,28 +420,35 @@ export default function App() {
 
   if (booting) {
     return (
-      <View style={styles.loadingScreen}>
-        <ActivityIndicator size="large" color="#00bfff" />
-        <Text style={styles.loadingText}>Loading Tenman iOS save...</Text>
-      </View>
+      <PaperProvider theme={paperTheme}>
+        <View style={styles.loadingScreen}>
+          <PaperActivityIndicator size="large" color="#2563eb" />
+          <PaperText style={styles.loadingText}>Loading Tenman iOS save...</PaperText>
+        </View>
+      </PaperProvider>
     );
   }
 
   const schedule = getTournamentSchedule(state);
 
   return (
-    <ScrollView style={styles.app} contentContainerStyle={styles.container}>
-      <Text style={styles.subtitle}>{getWeeklyHeader(state)}</Text>
+    <PaperProvider theme={paperTheme}>
+      <ScrollView style={styles.app} contentContainerStyle={styles.container}>
+        <PaperText style={styles.subtitle}>{getWeeklyHeader(state)}</PaperText>
 
       {state.screen === "landing" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Start New Career</Text>
-          <TextInput
+        <Section>
+          <PaperText style={styles.h2}>Start New Career</PaperText>
+          <PaperTextInput
             style={styles.input}
+            mode="outlined"
+            label="Manager Name"
             placeholder="Manager Name"
             value={username}
             onChangeText={setUsername}
-            placeholderTextColor="#7a8da6"
+            outlineColor="#9ca3af"
+            activeOutlineColor="#1f2937"
+            textColor="#000000"
           />
           <Button
             label="Start Your Journey"
@@ -401,12 +469,12 @@ export default function App() {
               setUsername("");
             }}
           />
-        </View>
+        </Section>
       )}
 
       {state.screen === "recruit-territories" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Select Territory to Scout</Text>
+        <Section>
+          <PaperText style={styles.h2}>Select Territory to Scout</PaperText>
           {territoryNames.map((name, index) => (
             <Button
               key={name}
@@ -416,13 +484,13 @@ export default function App() {
           ))}
           <View style={styles.spacer} />
           <Button label="Menu" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "offer-recruits" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Recruit Offers</Text>
-          {state.offerRecruits.length === 0 && <Text style={styles.text}>No recruits available.</Text>}
+        <Section>
+          <PaperText style={styles.h2}>Recruit Offers</PaperText>
+          {state.offerRecruits.length === 0 && <PaperText style={styles.text}>No recruits available.</PaperText>}
           {state.offerRecruits.map((player) => (
             <PlayerCard
               key={player.player_id}
@@ -432,40 +500,42 @@ export default function App() {
             />
           ))}
           <Button label="Skip Recruits" variant="secondary" onPress={() => setState((prev) => skipRecruits(prev))} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "choose-tournament" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Choose Tournaments</Text>
+        <Section>
+          <PaperText style={styles.h2}>Choose Tournaments</PaperText>
           {availableTournaments.map(({ tournament, players }) => (
-            <View key={tournament.name} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
-              <Text style={styles.cardTitle}>{tournament.name}</Text>
-              <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <Text style={styles.text}>Level: {formatTournamentLevel(String(tournament.level))}</Text>
-              <Text style={styles.text}>Prize: {formatMoney(tournament.prize_money)}</Text>
+            <CardBlock key={tournament.name} style={styles[`cardSurface_${tournament.surface}`]}>
+              <PaperText style={styles.cardTitle}>{tournament.name}</PaperText>
+              <PaperText style={styles.text}><CountryFlag countryName={tournament.country} /></PaperText>
+              <PaperText style={styles.text}>Level: {formatTournamentLevel(String(tournament.level))}</PaperText>
+              <PaperText style={styles.text}>Prize: {formatMoney(tournament.prize_money)}</PaperText>
 
               {players.length === 0 ? (
-                <Text style={styles.text}>No players available.</Text>
+                <PaperText style={styles.text}>No players available.</PaperText>
               ) : (
                 players.map((player) => {
                   const selected = (selectedByTournament[tournament.name] ?? []).includes(player.player_id);
                   return (
-                    <Pressable
+                    <TouchableRipple
                       key={player.player_id}
                       style={[styles.playerOption, selected && styles.playerOptionSelected, player.qualify_tourney === 0 && styles.playerOptionDisabled]}
                       onPress={() => toggleTournamentPlayer(tournament.name, player)}
                     >
-                      <Text style={styles.playerOptionTitle}>
-                        <CountryFlag countryName={player.country} showName={false} /> {player.name}
-                      </Text>
-                      <Text style={styles.playerOptionText}>Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)} | Energy {toInt(player.energy)}</Text>
-                      <Text style={styles.playerOptionText}>Qualification: {QUALIFICATION_LABELS[player.qualify_tourney] ?? "Unknown"}</Text>
-                    </Pressable>
+                      <View>
+                        <PaperText style={styles.playerOptionTitle}>
+                          <CountryFlag countryName={player.country} showName={false} /> {player.name}
+                        </PaperText>
+                        <PaperText style={styles.playerOptionText}>Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)} | Energy {toInt(player.energy)}</PaperText>
+                        <PaperText style={styles.playerOptionText}>Qualification: {QUALIFICATION_LABELS[player.qualify_tourney] ?? "Unknown"}</PaperText>
+                      </View>
+                    </TouchableRipple>
                   );
                 })
               )}
-            </View>
+            </CardBlock>
           ))}
 
           <Button
@@ -473,23 +543,23 @@ export default function App() {
             onPress={() => setState((prev) => enterTournaments(prev, selectedByTournament))}
           />
           <Button label="Skip" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "tournament-results" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Tournament Results</Text>
+        <Section>
+          <PaperText style={styles.h2}>Tournament Results</PaperText>
           {state.lastTournamentResults.length === 0 ? (
-            <Text style={styles.text}>No results to display.</Text>
+            <PaperText style={styles.text}>No results to display.</PaperText>
           ) : (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{state.lastTournamentResults[resultIndex]?.tournamentName}</Text>
+            <CardBlock>
+              <PaperText style={styles.cardTitle}>{state.lastTournamentResults[resultIndex]?.tournamentName}</PaperText>
               {state.lastTournamentResults[resultIndex]?.lines.map((line, idx) => (
-                <Text key={`${idx}-${line}`} style={styles.resultLine}>
+                <PaperText key={`${idx}-${line}`} style={styles.resultLine}>
                   {line}
-                </Text>
+                </PaperText>
               ))}
-            </View>
+            </CardBlock>
           )}
           <Button
             label={resultIndex < state.lastTournamentResults.length - 1 ? "Next Tournament" : "Finish"}
@@ -501,32 +571,32 @@ export default function App() {
               }
             }}
           />
-        </View>
+        </Section>
       )}
 
       {state.screen === "injury-alert" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Injury Alert</Text>
+        <Section>
+          <PaperText style={styles.h2}>Injury Alert</PaperText>
           {(state.injuryAlerts ?? []).length === 0 ? (
-            <Text style={styles.text}>No new injuries this week.</Text>
+            <PaperText style={styles.text}>No new injuries this week.</PaperText>
           ) : (
             state.injuryAlerts?.map((alert, index) => (
-              <View key={`${alert.player_id}-${index}`} style={[styles.card, styles.injuryAlertCard]}>
-                <Text style={styles.injuryAlertTitle}>{alert.player_name} has been injured.</Text>
-                <Text style={styles.injuryAlertText}>
+              <CardBlock key={`${alert.player_id}-${index}`} style={styles.injuryAlertCard}>
+                <PaperText style={styles.injuryAlertTitle}>{alert.player_name} has been injured.</PaperText>
+                <PaperText style={styles.injuryAlertText}>
                   Injured: out {alert.weeks_out} {alert.weeks_out === 1 ? "week" : "weeks"}
-                </Text>
-              </View>
+                </PaperText>
+              </CardBlock>
             ))
           )}
           <Button label="Continue" onPress={() => setState((prev) => dismissInjuryAlerts(prev))} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "menu" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Menu</Text>
-          <Text style={styles.text}>Lifetime Agent Earnings: {formatMoney(state.agent_earnings)}</Text>
+        <Section>
+          <PaperText style={styles.h2}>Menu</PaperText>
+          <PaperText style={styles.text}>Lifetime Agent Earnings: {formatMoney(state.agent_earnings)}</PaperText>
           <Button label="Advance Week" onPress={() => setState((prev) => advanceWeek(prev))} />
           <Button label="View Senior Players" onPress={() => go("view-senior-players")} />
           <Button label="View Junior Players" onPress={() => go("view-junior-players")} />
@@ -539,17 +609,17 @@ export default function App() {
           <Button label="Skip Ahead" variant="gold" onPress={() => go("skip-ahead")} />
           <Button label="Remove Player" variant="danger" onPress={() => go("remove-player")} />
           <Button label="Retire Agent" variant="danger" onPress={() => go("retire-agent")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "retire-agent" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Retire Agent</Text>
-          <View style={styles.card}>
-            <Text style={styles.text}>
+        <Section>
+          <PaperText style={styles.h2}>Retire Agent</PaperText>
+          <CardBlock>
+            <PaperText style={styles.text}>
               This action is permanent. Your current career progress will be deleted and your game will start over.
-            </Text>
-          </View>
+            </PaperText>
+          </CardBlock>
           <Button
             label="Delete"
             variant="danger"
@@ -560,13 +630,13 @@ export default function App() {
             }}
           />
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "view-senior-players" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Senior Players</Text>
-          {seniorPlayers.length === 0 && <Text style={styles.text}>No senior players.</Text>}
+        <Section>
+          <PaperText style={styles.h2}>Senior Players</PaperText>
+          {seniorPlayers.length === 0 && <PaperText style={styles.text}>No senior players.</PaperText>}
           {seniorPlayers.map((player) => (
             <PlayerCard
               key={player.player_id}
@@ -591,13 +661,13 @@ export default function App() {
             />
           ))}
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "view-junior-players" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Junior Players</Text>
-          {juniorPlayers.length === 0 && <Text style={styles.text}>No junior players.</Text>}
+        <Section>
+          <PaperText style={styles.h2}>Junior Players</PaperText>
+          {juniorPlayers.length === 0 && <PaperText style={styles.text}>No junior players.</PaperText>}
           {juniorPlayers.map((player) => (
             <PlayerCard
               key={player.player_id}
@@ -621,16 +691,16 @@ export default function App() {
             />
           ))}
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "view-player-details" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Player Details</Text>
+        <Section>
+          <PaperText style={styles.h2}>Player Details</PaperText>
           {!detailPlayer ? (
-            <View style={styles.card}>
-              <Text style={styles.text}>Player not found in your roster.</Text>
-            </View>
+            <CardBlock>
+              <PaperText style={styles.text}>Player not found in your roster.</PaperText>
+            </CardBlock>
           ) : (
             (() => {
               const annualResults = Object.entries(detailPlayer.annual_results).sort(sortByTopFinish);
@@ -645,18 +715,18 @@ export default function App() {
 
               return (
                 <>
-                  <View style={styles.card}>
-                    <Text style={styles.cardTitle}>
+                  <CardBlock>
+                    <PaperText style={styles.cardTitle}>
                       <CountryFlag countryName={detailPlayer.nationality} showName={false} /> {detailPlayer.name}
-                    </Text>
-                    <Text style={styles.text}>
+                    </PaperText>
+                    <PaperText style={styles.text}>
                       {detailPlayer.junior ? "Junior" : "Senior"} | Age {detailPlayer.age} | Rank #{toInt(detailPlayer.ranking)}
-                    </Text>
-                    <Text style={styles.text}>
+                    </PaperText>
+                    <PaperText style={styles.text}>
                       Season {detailPlayer.season_record.wins}-{detailPlayer.season_record.losses}
                       {" | "}Career {detailPlayer.career_record.wins}-{detailPlayer.career_record.losses}
-                    </Text>
-                    <Text style={styles.text}>Career Earnings: {formatMoney(detailPlayer.career_earnings)}</Text>
+                    </PaperText>
+                    <PaperText style={styles.text}>Career Earnings: {formatMoney(detailPlayer.career_earnings)}</PaperText>
                     <View style={styles.rowWrap}>
                       <MiniStat label={detailPlayer.junior ? "JR Points" : "Points"} value={toInt(detailPlayer.junior ? detailPlayer.junior_points : detailPlayer.points)} />
                       <MiniStat label="Titles" value={detailPlayer.tournament_wins} />
@@ -665,12 +735,12 @@ export default function App() {
                       <MiniStat label="Best JR Rank" value={`#${toInt(detailPlayer.best_junior_ranking)}`} />
                       <MiniStat label="Weeks #1" value={detailPlayer.weeks_ranked_1} />
                     </View>
-                  </View>
+                  </CardBlock>
 
-                  <View style={styles.card}>
-                    <Text style={styles.detailSectionHeader}>Results This Year ({state.year})</Text>
+                  <CardBlock>
+                    <PaperText style={styles.detailSectionHeader}>Results This Year ({state.year})</PaperText>
                     {annualResults.length === 0 ? (
-                      <Text style={styles.textMuted}>No tournament results recorded this year.</Text>
+                      <PaperText style={styles.textMuted}>No tournament results recorded this year.</PaperText>
                     ) : (
                       annualResults.map(([name, top]) => (
                         <DetailStatRow
@@ -681,12 +751,12 @@ export default function App() {
                         />
                       ))
                     )}
-                  </View>
+                  </CardBlock>
 
-                  <View style={styles.card}>
-                    <Text style={styles.detailSectionHeader}>Results Last Year ({state.year - 1})</Text>
+                  <CardBlock>
+                    <PaperText style={styles.detailSectionHeader}>Results Last Year ({state.year - 1})</PaperText>
                     {lastYearResults.length === 0 ? (
-                      <Text style={styles.textMuted}>No results stored for last season.</Text>
+                      <PaperText style={styles.textMuted}>No results stored for last season.</PaperText>
                     ) : (
                       lastYearResults.map(([name, top]) => (
                         <DetailStatRow
@@ -697,13 +767,13 @@ export default function App() {
                         />
                       ))
                     )}
-                  </View>
+                  </CardBlock>
 
-                  <View style={styles.card}>
-                    <Text style={styles.detailSectionHeader}>Major Tournament Snapshot</Text>
-                    <Text style={styles.h3}>This Year</Text>
+                  <CardBlock>
+                    <PaperText style={styles.detailSectionHeader}>Major Tournament Snapshot</PaperText>
+                    <PaperText style={styles.h3}>This Year</PaperText>
                     {majorCurrentResults.length === 0 ? (
-                      <Text style={styles.textMuted}>No major results this year yet.</Text>
+                      <PaperText style={styles.textMuted}>No major results this year yet.</PaperText>
                     ) : (
                       majorCurrentResults.map(([name, top]) => (
                         <DetailStatRow
@@ -714,9 +784,9 @@ export default function App() {
                         />
                       ))
                     )}
-                    <Text style={styles.h3}>Last Year</Text>
+                    <PaperText style={styles.h3}>Last Year</PaperText>
                     {majorLastResults.length === 0 ? (
-                      <Text style={styles.textMuted}>No major results from last year.</Text>
+                      <PaperText style={styles.textMuted}>No major results from last year.</PaperText>
                     ) : (
                       majorLastResults.map(([name, top]) => (
                         <DetailStatRow
@@ -727,9 +797,9 @@ export default function App() {
                         />
                       ))
                     )}
-                    <Text style={styles.h3}>Best Senior Major Finishes</Text>
+                    <PaperText style={styles.h3}>Best Senior Major Finishes</PaperText>
                     {majorBestResults.length === 0 ? (
-                      <Text style={styles.textMuted}>No recorded major best finishes yet.</Text>
+                      <PaperText style={styles.textMuted}>No recorded major best finishes yet.</PaperText>
                     ) : (
                       majorBestResults.map(([name, top]) => (
                         <DetailStatRow
@@ -740,9 +810,9 @@ export default function App() {
                         />
                       ))
                     )}
-                    <Text style={styles.h3}>Best Junior Big Event Finishes</Text>
+                    <PaperText style={styles.h3}>Best Junior Big Event Finishes</PaperText>
                     {juniorBigResults.length === 0 ? (
-                      <Text style={styles.textMuted}>No recorded junior big-event best finishes yet.</Text>
+                      <PaperText style={styles.textMuted}>No recorded junior big-event best finishes yet.</PaperText>
                     ) : (
                       juniorBigResults.map(([name, top]) => (
                         <DetailStatRow
@@ -753,12 +823,12 @@ export default function App() {
                         />
                       ))
                     )}
-                  </View>
+                  </CardBlock>
 
-                  <View style={styles.card}>
-                    <Text style={styles.detailSectionHeader}>Titles Won</Text>
+                  <CardBlock>
+                    <PaperText style={styles.detailSectionHeader}>Titles Won</PaperText>
                     {titlesWon.length === 0 ? (
-                      <Text style={styles.textMuted}>No titles won yet.</Text>
+                      <PaperText style={styles.textMuted}>No titles won yet.</PaperText>
                     ) : (
                       titlesWon.map(([name, years]) => (
                         <DetailStatRow
@@ -769,12 +839,12 @@ export default function App() {
                         />
                       ))
                     )}
-                  </View>
+                  </CardBlock>
 
-                  <View style={styles.card}>
-                    <Text style={styles.detailSectionHeader}>Head-to-Head Matchups</Text>
+                  <CardBlock>
+                    <PaperText style={styles.detailSectionHeader}>Head-to-Head Matchups</PaperText>
                     {h2hWins.length === 0 ? (
-                      <Text style={styles.textMuted}>No head-to-head wins recorded yet.</Text>
+                      <PaperText style={styles.textMuted}>No head-to-head wins recorded yet.</PaperText>
                     ) : (
                       h2hWins.map(([opponent, wins]) => (
                         <DetailStatRow
@@ -784,16 +854,16 @@ export default function App() {
                         />
                       ))
                     )}
-                  </View>
+                  </CardBlock>
 
-                  <View style={styles.card}>
-                    <Text style={styles.detailSectionHeader}>Head-to-Head Breakdown</Text>
+                  <CardBlock>
+                    <PaperText style={styles.detailSectionHeader}>Head-to-Head Breakdown</PaperText>
                     {h2hBreakdown.length === 0 ? (
-                      <Text style={styles.textMuted}>No matchup breakdown data yet.</Text>
+                      <PaperText style={styles.textMuted}>No matchup breakdown data yet.</PaperText>
                     ) : (
                       h2hBreakdown.map(([opponent, tournaments]) => (
                         <View key={`breakdown-${opponent}`} style={styles.detailGroup}>
-                          <Text style={styles.detailGroupTitle}>{opponent}</Text>
+                          <PaperText style={styles.detailGroupTitle}>{opponent}</PaperText>
                           {Object.entries(tournaments)
                             .sort(sortByName)
                             .map(([tournamentName, years]) => (
@@ -808,27 +878,27 @@ export default function App() {
                         </View>
                       ))
                     )}
-                  </View>
+                  </CardBlock>
                 </>
               );
             })()
           )}
           <Button label="Back" variant="secondary" onPress={() => go(detailBackScreen)} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "training" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Offseason Training</Text>
-          {trainingEligible.length === 0 && <Text style={styles.text}>No players are eligible for training this offseason.</Text>}
+        <Section>
+          <PaperText style={styles.h2}>Offseason Training</PaperText>
+          {trainingEligible.length === 0 && <PaperText style={styles.text}>No players are eligible for training this offseason.</PaperText>}
           {trainingEligible.map((player) => {
             const currentChoice = trainingChoices[player.player_id];
             const label = currentChoice === undefined ? "Choose training" : trainingOptions[currentChoice];
             return (
-              <View key={player.player_id} style={styles.card}>
-                <Text style={styles.cardTitle}>{player.name}</Text>
-                <Text style={styles.text}>Age {player.age} | Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)}</Text>
-                <Text style={styles.text}>Current training: {label}</Text>
+              <CardBlock key={player.player_id}>
+                <PaperText style={styles.cardTitle}>{player.name}</PaperText>
+                <PaperText style={styles.text}>Age {player.age} | Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)}</PaperText>
+                <PaperText style={styles.text}>Current training: {label}</PaperText>
                 <View style={styles.rowButtons}>
                   {trainingOptions.map((option, optionIndex) => (
                     <Button
@@ -844,7 +914,7 @@ export default function App() {
                     />
                   ))}
                 </View>
-              </View>
+              </CardBlock>
             );
           })}
           <Button
@@ -853,13 +923,13 @@ export default function App() {
             disabled={trainingEligible.length > 0 && trainingEligible.some((player) => trainingChoices[player.player_id] === undefined)}
           />
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "remove-player" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Remove Player</Text>
-          {state.userPlayers.length === 0 && <Text style={styles.text}>No players in roster.</Text>}
+        <Section>
+          <PaperText style={styles.h2}>Remove Player</PaperText>
+          {state.userPlayers.length === 0 && <PaperText style={styles.text}>No players in roster.</PaperText>}
           {state.userPlayers.map((player) => (
             <PlayerCard
               key={player.player_id}
@@ -868,14 +938,14 @@ export default function App() {
             />
           ))}
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "skip-ahead" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Simulate Ahead</Text>
-          <Text style={styles.text}>Current week: {state.week}</Text>
-          <Text style={styles.text}>Selected week: {selectedWeek}</Text>
+        <Section>
+          <PaperText style={styles.h2}>Simulate Ahead</PaperText>
+          <PaperText style={styles.text}>Current week: {state.week}</PaperText>
+          <PaperText style={styles.text}>Selected week: {selectedWeek}</PaperText>
           <View style={styles.rowButtons}>
             <Button
               label="-1 Week"
@@ -893,52 +963,52 @@ export default function App() {
           <Button label="Sim to Selected Week" onPress={() => setState((prev) => skipToWeek(prev, selectedWeek))} />
           <Button label="Sim to Next Year" variant="gold" onPress={() => setState((prev) => skipToNextYear(prev))} />
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "view-tournament-schedule" && (
-        <View style={styles.section}>
+        <Section>
           <View style={styles.topLeftAction}>
             <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
           </View>
-          <Text style={styles.h2}>Tournament Schedule</Text>
-          <Text style={styles.h3}>Senior (next 5 weeks)</Text>
-          {schedule.senior.length === 0 && <Text style={styles.text}>No upcoming senior tournaments.</Text>}
+          <PaperText style={styles.h2}>Tournament Schedule</PaperText>
+          <PaperText style={styles.h3}>Senior (next 5 weeks)</PaperText>
+          {schedule.senior.length === 0 && <PaperText style={styles.text}>No upcoming senior tournaments.</PaperText>}
           {schedule.senior.map((tournament) => (
-            <View key={`${tournament.week}-${tournament.name}`} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
-              <Text style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</Text>
-              <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <Text style={styles.text}>Level: {formatTournamentLevel(tournament.level)}</Text>
-              <Text style={styles.text}>Points {tournament.points} | Prize {formatMoney(tournament.prize_money)}</Text>
-            </View>
+            <CardBlock key={`${tournament.week}-${tournament.name}`} style={styles[`cardSurface_${tournament.surface}`]}>
+              <PaperText style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</PaperText>
+              <PaperText style={styles.text}><CountryFlag countryName={tournament.country} /></PaperText>
+              <PaperText style={styles.text}>Level: {formatTournamentLevel(tournament.level)}</PaperText>
+              <PaperText style={styles.text}>Points {tournament.points} | Prize {formatMoney(tournament.prize_money)}</PaperText>
+            </CardBlock>
           ))}
 
-          <Text style={styles.h3}>Junior (next 10 weeks)</Text>
-          {schedule.junior.length === 0 && <Text style={styles.text}>No upcoming junior tournaments.</Text>}
+          <PaperText style={styles.h3}>Junior (next 10 weeks)</PaperText>
+          {schedule.junior.length === 0 && <PaperText style={styles.text}>No upcoming junior tournaments.</PaperText>}
           {schedule.junior.map((tournament) => (
-            <View key={`${tournament.week}-${tournament.name}`} style={[styles.card, styles[`cardSurface_${tournament.surface}`]]}>
-              <Text style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</Text>
-              <Text style={styles.text}><CountryFlag countryName={tournament.country} /></Text>
-              <Text style={styles.text}>Level: {formatTournamentLevel(tournament.level)}</Text>
-              <Text style={styles.text}>Points {tournament.points}</Text>
-            </View>
+            <CardBlock key={`${tournament.week}-${tournament.name}`} style={styles[`cardSurface_${tournament.surface}`]}>
+              <PaperText style={styles.cardTitle}>Week {tournament.week}: {tournament.name}</PaperText>
+              <PaperText style={styles.text}><CountryFlag countryName={tournament.country} /></PaperText>
+              <PaperText style={styles.text}>Level: {formatTournamentLevel(tournament.level)}</PaperText>
+              <PaperText style={styles.text}>Points {tournament.points}</PaperText>
+            </CardBlock>
           ))}
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
 
       {state.screen === "exhibition-match" && (
-        <View style={styles.section}>
-          <Text style={styles.h2}>Exhibition Match</Text>
+        <Section>
+          <PaperText style={styles.h2}>Exhibition Match</PaperText>
           {exhibitionEligible.length < 2 ? (
-            <Text style={styles.text}>Need at least 2 healthy players with 40+ energy.</Text>
+            <PaperText style={styles.text}>Need at least 2 healthy players with 40+ energy.</PaperText>
           ) : (
             <>
-              <Text style={styles.h3}>Select Players</Text>
+              <PaperText style={styles.h3}>Select Players</PaperText>
               {exhibitionEligible.map((player) => {
                 const selected = player.player_id === exhPlayer1 || player.player_id === exhPlayer2;
                 return (
-                  <Pressable
+                  <TouchableRipple
                     key={player.player_id}
                     style={[styles.playerOption, selected && styles.playerOptionSelected]}
                     onPress={() => {
@@ -948,15 +1018,17 @@ export default function App() {
                       else if (!exhPlayer2) setExhPlayer2(player.player_id);
                     }}
                   >
-                    <Text style={styles.playerOptionTitle}>{player.name}</Text>
-                    <Text style={styles.playerOptionText}>Energy {toInt(player.energy)} | Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)}</Text>
-                  </Pressable>
+                    <View>
+                      <PaperText style={styles.playerOptionTitle}>{player.name}</PaperText>
+                      <PaperText style={styles.playerOptionText}>Energy {toInt(player.energy)} | Rank #{toInt(player.ranking)} | OVR {toInt(player.overall)}</PaperText>
+                    </View>
+                  </TouchableRipple>
                 );
               })}
 
-              <Text style={styles.h3}>Surface</Text>
+              <PaperText style={styles.h3}>Surface</PaperText>
               <View style={styles.rowButtons}>
-                {(["hard", "clay", "grass"] as Surface[]).map((surface) => (
+                {(["hard", "clay", "grass"] as CourtSurface[]).map((surface) => (
                   <Button
                     key={surface}
                     label={surface.toUpperCase()}
@@ -966,7 +1038,7 @@ export default function App() {
                 ))}
               </View>
 
-              <Text style={styles.h3}>Focus ({exhPlayer1 ? exhibitionEligible.find((p) => p.player_id === exhPlayer1)?.name : "Player 1"})</Text>
+              <PaperText style={styles.h3}>Focus ({exhPlayer1 ? exhibitionEligible.find((p) => p.player_id === exhPlayer1)?.name : "Player 1"})</PaperText>
               <View style={styles.rowButtons}>
                 {exhibitionFocuses.map((focus) => (
                   <Button
@@ -979,7 +1051,7 @@ export default function App() {
                 ))}
               </View>
 
-              <Text style={styles.h3}>Focus ({exhPlayer2 ? exhibitionEligible.find((p) => p.player_id === exhPlayer2)?.name : "Player 2"})</Text>
+              <PaperText style={styles.h3}>Focus ({exhPlayer2 ? exhibitionEligible.find((p) => p.player_id === exhPlayer2)?.name : "Player 2"})</PaperText>
               <View style={styles.rowButtons}>
                 {exhibitionFocuses.map((focus) => (
                   <Button
@@ -1007,30 +1079,31 @@ export default function App() {
                 disabled={!exhPlayer1 || !exhPlayer2}
               />
 
-              {exhError && <Text style={styles.error}>{exhError}</Text>}
+              {exhError && <PaperText style={styles.error}>{exhError}</PaperText>}
               {exhLines && (
-                <View style={styles.card}>
-                  <Text style={styles.cardTitle}>Exhibition Results</Text>
+                <CardBlock>
+                  <PaperText style={styles.cardTitle}>Exhibition Results</PaperText>
                   {exhLines.map((line, index) => (
-                    <Text key={`${line}-${index}`} style={styles.resultLine}>
+                    <PaperText key={`${line}-${index}`} style={styles.resultLine}>
                       {line}
-                    </Text>
+                    </PaperText>
                   ))}
-                </View>
+                </CardBlock>
               )}
             </>
           )}
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
-        </View>
+        </Section>
       )}
-    </ScrollView>
+      </ScrollView>
+    </PaperProvider>
   );
 }
 
 const styles = StyleSheet.create({
   app: {
     flex: 1,
-    backgroundColor: "#0b1220",
+    backgroundColor: "#e9eef5",
   },
   container: {
     paddingHorizontal: 14,
@@ -1041,54 +1114,48 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0b1220",
+    backgroundColor: "#e9eef5",
     gap: 12,
   },
   loadingText: {
-    color: "#dbeafe",
+    color: "#111111",
     fontSize: 16,
   },
   subtitle: {
-    color: "#93c5fd",
+    color: "#111111",
     fontSize: 16,
     textAlign: "center",
     marginBottom: 6,
   },
   section: {
     gap: 10,
-    backgroundColor: "#101a2f",
-    borderColor: "#1e3a5f",
+    backgroundColor: "#f5f8fc",
+    borderColor: "#cdd8e6",
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
   },
   h2: {
-    color: "#bae6fd",
+    color: "#000000",
     fontSize: 22,
     fontWeight: "700",
   },
   h3: {
-    color: "#7dd3fc",
+    color: "#000000",
     fontSize: 16,
     fontWeight: "700",
     marginTop: 4,
   },
   text: {
-    color: "#dbeafe",
+    color: "#000000",
     fontSize: 14,
   },
   textMuted: {
-    color: "#94a3b8",
+    color: "#4b5563",
     fontSize: 13,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#2563eb",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: "#e0f2fe",
-    backgroundColor: "#0f172a",
+    backgroundColor: "#ffffff",
   },
   spacer: {
     height: 4,
@@ -1105,60 +1172,43 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   button: {
+    alignSelf: "stretch",
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    alignItems: "center",
   },
-  button_primary: {
-    backgroundColor: "#0ea5e9",
-  },
-  button_secondary: {
-    backgroundColor: "#334155",
-  },
-  button_danger: {
-    backgroundColor: "#dc2626",
-  },
-  button_gold: {
-    backgroundColor: "#ca8a04",
-  },
-  buttonPressed: {
-    opacity: 0.8,
-  },
-  buttonDisabled: {
-    opacity: 0.45,
+  buttonContent: {
+    paddingVertical: 2,
   },
   buttonText: {
-    color: "#f8fafc",
     fontWeight: "700",
+    fontSize: 14,
   },
   card: {
-    backgroundColor: "#0f1b32",
+    backgroundColor: "#ffffff",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1e3a5f",
+    borderColor: "#cfd8e3",
     padding: 10,
     gap: 6,
   },
   cardSurface_hard: {
-    borderColor: "#60a5fa",
-    backgroundColor: "#112f66",
+    borderColor: "#1d4ed8",
+    backgroundColor: "#bfdbfe",
   },
   cardSurface_clay: {
-    borderColor: "#fb923c",
-    backgroundColor: "#3f2415",
+    borderColor: "#b45309",
+    backgroundColor: "#fed7aa",
   },
   cardSurface_grass: {
-    borderColor: "#4ade80",
-    backgroundColor: "#132a20",
+    borderColor: "#166534",
+    backgroundColor: "#bbf7d0",
   },
   cardTitle: {
-    color: "#e2e8f0",
+    color: "#000000",
     fontSize: 16,
     fontWeight: "700",
   },
   detailSectionHeader: {
-    color: "#93c5fd",
+    color: "#000000",
     fontSize: 17,
     fontWeight: "700",
   },
@@ -1166,12 +1216,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   detailGroupTitle: {
-    color: "#e2e8f0",
+    color: "#111111",
     fontSize: 13,
     fontWeight: "700",
   },
   injuryBanner: {
-    backgroundColor: "#7f1d1d",
+    backgroundColor: "#fee2e2",
     borderColor: "#ef4444",
     borderWidth: 1,
     borderRadius: 8,
@@ -1179,7 +1229,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   injuryBannerText: {
-    color: "#fee2e2",
+    color: "#7f1d1d",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -1189,7 +1239,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   miniStat: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#f3f4f6",
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 6,
@@ -1199,80 +1249,80 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   miniStat_hard: {
-    backgroundColor: "#1e40af",
+    backgroundColor: "#93c5fd",
     borderWidth: 1,
-    borderColor: "#93c5fd",
+    borderColor: "#2563eb",
   },
   miniStat_clay: {
-    backgroundColor: "#c2410c",
+    backgroundColor: "#fdba74",
     borderWidth: 1,
-    borderColor: "#fdba74",
+    borderColor: "#c2410c",
   },
   miniStat_grass: {
-    backgroundColor: "#166534",
+    backgroundColor: "#86efac",
     borderWidth: 1,
-    borderColor: "#86efac",
+    borderColor: "#15803d",
   },
   miniStatLabel: {
-    color: "#94a3b8",
+    color: "#4b5563",
     fontSize: 11,
   },
   miniStatLabel_hard: {
-    color: "#dbeafe",
+    color: "#1f2937",
   },
   miniStatLabel_clay: {
-    color: "#fed7aa",
+    color: "#1f2937",
   },
   miniStatLabel_grass: {
-    color: "#bbf7d0",
+    color: "#1f2937",
   },
   miniStatValue: {
-    color: "#f1f5f9",
+    color: "#000000",
     fontSize: 13,
     fontWeight: "700",
   },
   miniStatValue_hard: {
-    color: "#eff6ff",
+    color: "#000000",
   },
   miniStatValue_clay: {
-    color: "#fff7ed",
+    color: "#000000",
   },
   miniStatValue_grass: {
-    color: "#dcfce7",
+    color: "#000000",
   },
   playerOption: {
-    backgroundColor: "#0c1426",
+    backgroundColor: "#f8fafc",
     borderWidth: 1,
-    borderColor: "#27406a",
+    borderColor: "#cbd5e1",
     borderRadius: 8,
     padding: 10,
     marginTop: 6,
   },
   playerOptionSelected: {
-    borderColor: "#22d3ee",
-    backgroundColor: "#082f49",
+    borderColor: "#2563eb",
+    backgroundColor: "#eff6ff",
   },
   playerOptionDisabled: {
     opacity: 0.45,
   },
   playerOptionTitle: {
-    color: "#e2e8f0",
+    color: "#000000",
     fontWeight: "700",
     fontSize: 14,
   },
   playerOptionText: {
-    color: "#bfdbfe",
+    color: "#111827",
     fontSize: 12,
   },
   resultLine: {
-    color: "#e0f2fe",
+    color: "#000000",
     borderLeftWidth: 3,
-    borderLeftColor: "#0ea5e9",
+    borderLeftColor: "#2563eb",
     paddingLeft: 8,
     paddingVertical: 3,
   },
   detailRow: {
-    color: "#e0f2fe",
+    color: "#000000",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1287,7 +1337,7 @@ const styles = StyleSheet.create({
     borderLeftColor: "#2563eb",
   },
   detailRowLabel: {
-    color: "#e0f2fe",
+    color: "#000000",
     fontSize: 13,
     flex: 1,
     flexShrink: 1,
@@ -1298,7 +1348,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   detailRowValue: {
-    color: "#bfdbfe",
+    color: "#1f2937",
     fontSize: 13,
     fontWeight: "600",
     textAlign: "right",
@@ -1306,25 +1356,25 @@ const styles = StyleSheet.create({
     maxWidth: "42%",
   },
   detailSubRowValue: {
-    color: "#93c5fd",
+    color: "#374151",
     fontSize: 12,
     minWidth: 96,
   },
   error: {
-    color: "#fca5a5",
+    color: "#b91c1c",
     fontWeight: "700",
   },
   injuryAlertCard: {
     borderColor: "#ef4444",
-    backgroundColor: "#450a0a",
+    backgroundColor: "#fee2e2",
   },
   injuryAlertTitle: {
-    color: "#fecaca",
+    color: "#7f1d1d",
     fontSize: 15,
     fontWeight: "700",
   },
   injuryAlertText: {
-    color: "#fee2e2",
+    color: "#991b1b",
     fontSize: 13,
     fontWeight: "600",
   },
