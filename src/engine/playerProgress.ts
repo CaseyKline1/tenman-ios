@@ -1,6 +1,6 @@
 import { GameState, InjuryAlert, Player } from "../types/game";
 import { clamp, randomBetween, randomInt } from "./random";
-import { MAJOR_TOURNAMENTS, MASTERS_TOURNAMENTS, STAMINA_MAX } from "./engineConstants";
+import { ENERGY_MAX, MAJOR_TOURNAMENTS, MASTERS_TOURNAMENTS, STAMINA_MAX } from "./engineConstants";
 
 const improvePlayerAtYearEnd = (player: Player) => {
   const totalSeasonMatches = Math.max(1, player.season_record.wins + player.season_record.losses);
@@ -47,7 +47,7 @@ export const endOfYear = (state: GameState) => {
     player.last_year_results = { ...player.annual_results };
     player.annual_results = {};
     player.season_record = { wins: 0, losses: 0 };
-    player.energy = 100;
+    player.energy = ENERGY_MAX;
   }
 
   state.userPlayers = state.userPlayers.filter((player) => player.age <= 40);
@@ -75,7 +75,7 @@ export const endOfYear = (state: GameState) => {
 
 const checkForInjury = (player: Player) => {
   const ageFactor = player.age > 35 ? 0.03 : player.age > 30 ? 0.015 : 0;
-  const energyRisk = clamp((100 - player.energy) / 100, 0, 1);
+  const energyRisk = clamp((ENERGY_MAX - player.energy) / ENERGY_MAX, 0, 1);
   const injuryChance = energyRisk * (0.04 + player.injury_prone * 0.08) + ageFactor;
   if (Math.random() < injuryChance) {
     const weeks = randomInt(1, 12);
@@ -90,8 +90,8 @@ export const applyWeeklyPlayerProgress = (player: Player): InjuryAlert | null =>
   player.injury_weeks = Math.max(0, player.injury_weeks - 1);
   const injuredThisWeek = checkForInjury(player);
   player.energy = player.junior
-    ? clamp(player.energy + 7, 1, 100)
-    : clamp(Math.max(Math.pow(100 - player.energy, 0.8), player.energy + 11), 1, 100);
+    ? clamp(player.energy + 7, 1, ENERGY_MAX)
+    : clamp(Math.max(Math.pow(ENERGY_MAX - player.energy, 0.8), player.energy + 11), 1, ENERGY_MAX);
   player.heat = Math.pow(player.heat, 2 / 3);
   player.hard_heat = Math.pow(player.hard_heat, 2 / 3);
   player.clay_heat = Math.pow(player.clay_heat, 2 / 3);

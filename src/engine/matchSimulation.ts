@@ -1,15 +1,15 @@
 import { ExhibitionFocus } from "../data/recruiting";
 import { JuniorTournament, Player, Surface, Tournament } from "../types/game";
-import { STAMINA_MAX } from "./engineConstants";
+import { ENERGY_MAX, STAMINA_MAX } from "./engineConstants";
 import { roundLabel } from "./engineFormatting";
 import { clamp, randomBetween, randomInt } from "./random";
 
 const useEnergy = (player: Player) => {
-  const normalizedEnergy = clamp(player.energy / 100, 0.01, 1);
+  const normalizedEnergy = clamp(player.energy / ENERGY_MAX, 0.01, 1);
   const effectiveStamina = clamp(player.stamina, 1, STAMINA_MAX);
   const staminaPenalty = Math.sqrt((100 - effectiveStamina) / 25);
   const energyUsed = 0.15 / Math.sqrt(normalizedEnergy) * staminaPenalty;
-  player.energy = clamp(player.energy - energyUsed, 0.01, 100);
+  player.energy = clamp(player.energy - energyUsed, 0.01, ENERGY_MAX);
 };
 
 const adjustSurfaceGrowth = (player: Player, surface: Surface) => {
@@ -38,7 +38,7 @@ const calcSkill = (
   if (tournament.surface === "grass") heat += player.grass_heat;
 
   const rand = randomBetween(0.8, 1.2);
-  let skill = (player.overall * (player.energy / 100) * court * rand + heat / 10) * (sameCountry ? 1.1 : 1);
+  let skill = (player.overall * (player.energy / ENERGY_MAX) * court * rand + heat / 10) * (sameCountry ? 1.1 : 1);
 
   if (serve) {
     const serveFactor = (player.serve - 25) / 100;
@@ -308,8 +308,8 @@ export const simulateExhibitionMatch = (
   const match = pvpMatch(player1, player2, pseudoTournament, year, 1, 1, false);
   const lines = [match.line, applyExhibitionFocus(player1, surface, focus1), applyExhibitionFocus(player2, surface, focus2)];
 
-  player1.energy = clamp(player1.energy - 33, 1, 100);
-  player2.energy = clamp(player2.energy - 33, 1, 100);
+  player1.energy = clamp(player1.energy - 33, 1, ENERGY_MAX);
+  player2.energy = clamp(player2.energy - 33, 1, ENERGY_MAX);
 
   return lines;
 };

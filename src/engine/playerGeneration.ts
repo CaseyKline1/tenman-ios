@@ -1,7 +1,7 @@
 import { NAME_POOL, TERRITORIES } from "../data/recruiting";
 import { Player } from "../types/game";
 import { clamp, randomBetween, randomChoice, randomInt } from "./random";
-import { STAMINA_MAX } from "./engineConstants";
+import { ENERGY_MAX, STAMINA_MAX } from "./engineConstants";
 
 const makePotentialLetter = (potential: number): string => {
   if (potential > 97) return "A+";
@@ -67,7 +67,7 @@ export const createPlayer = (userName: string, territoryId: number, takenNames: 
     overall,
     potential,
     potential_letter: makePotentialLetter(potential),
-    energy: 100,
+    energy: ENERGY_MAX,
     court_proficiencies: {
       hard: randomBetween(territory.hardRange[0], territory.hardRange[1]),
       clay: randomBetween(territory.clayRange[0], territory.clayRange[1]),
