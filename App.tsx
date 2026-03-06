@@ -39,8 +39,8 @@ import {
   trainingOptions,
 } from "./src/engine/gameEngine";
 import { clearGameState, loadGameState, saveGameState } from "./src/store/persistence";
-import { ExhibitionFocus, QUALIFICATION_LABELS } from "./src/data/recruiting";
-import { GameState, PlayerTournamentEligibility, ScreenKey, Surface as CourtSurface, TournamentWithPlayers } from "./src/types/game";
+import { QUALIFICATION_LABELS } from "./src/data/recruiting";
+import { GameState, ScreenKey, Surface as CourtSurface, TournamentWithPlayers } from "./src/types/game";
 import { Button, CardBlock, DetailStatRow, MiniStat, PlayerCard, Section } from "./src/ui/AppPrimitives";
 import {
   formatMoney,
@@ -56,25 +56,15 @@ import {
   sortByWinsDesc,
   toInt,
 } from "./src/ui/appHelpers";
+import { useExhibitionSetup } from "./src/ui/hooks/useExhibitionSetup";
+import { useScreenLocalState } from "./src/ui/hooks/useScreenLocalState";
+import { useTournamentSelection } from "./src/ui/hooks/useTournamentSelection";
 import { styles } from "./src/ui/appStyles";
 
 export default function App() {
   const [state, setState] = useState<GameState>(createInitialState());
   const [booting, setBooting] = useState(true);
   const [username, setUsername] = useState("");
-
-  const [selectedByTournament, setSelectedByTournament] = useState<Record<string, number[]>>({});
-  const [resultIndex, setResultIndex] = useState(0);
-  const [trainingChoices, setTrainingChoices] = useState<Record<number, number>>({});
-  const [selectedWeek, setSelectedWeek] = useState(2);
-
-  const [exhPlayer1, setExhPlayer1] = useState<number | null>(null);
-  const [exhPlayer2, setExhPlayer2] = useState<number | null>(null);
-  const [exhSurface, setExhSurface] = useState<CourtSurface>("hard");
-  const [exhFocus1, setExhFocus1] = useState<ExhibitionFocus>("court");
-  const [exhFocus2, setExhFocus2] = useState<ExhibitionFocus>("court");
-  const [exhLines, setExhLines] = useState<string[] | null>(null);
-  const [exhError, setExhError] = useState<string | null>(null);
   const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null);
   const [detailBackScreen, setDetailBackScreen] = useState<PlayerListScreen>("view-senior-players");
 
@@ -99,6 +89,31 @@ export default function App() {
     if (state.screen !== "choose-tournament") return [];
     return getAvailableTournaments(state);
   }, [state]);
+  const { selectedByTournament, toggleTournamentPlayer } = useTournamentSelection(state.screen, availableTournaments);
+  const {
+    resultIndex,
+    trainingChoices,
+    selectedWeek,
+    setResultIndex,
+    setTrainingChoices,
+    setSelectedWeek,
+  } = useScreenLocalState(state.screen, state.week);
+  const {
+    exhPlayer1,
+    exhPlayer2,
+    exhSurface,
+    exhFocus1,
+    exhFocus2,
+    exhLines,
+    exhError,
+    setExhPlayer1,
+    setExhPlayer2,
+    setExhSurface,
+    setExhFocus1,
+    setExhFocus2,
+    setExhLines,
+    setExhError,
+  } = useExhibitionSetup(state.screen, state.week);
 
   const seniorPlayers = useMemo(() => getSeniorPlayers(state), [state]);
   const juniorPlayers = useMemo(() => getJuniorPlayers(state), [state]);
@@ -113,37 +128,8 @@ export default function App() {
     if (state.screen !== "choose-tournament") return;
     if (availableTournaments.length === 0) {
       setState((prev) => ({ ...prev, screen: "menu" }));
-      return;
     }
-
-    const mandatory: Record<string, number[]> = {};
-    availableTournaments.forEach(({ tournament, players }) => {
-      const ids = players.filter((player) => player.qualify_tourney === -1).map((player) => player.player_id);
-      if (ids.length) mandatory[tournament.name] = ids;
-    });
-    setSelectedByTournament(mandatory);
   }, [state.screen, availableTournaments]);
-
-  useEffect(() => {
-    if (state.screen === "tournament-results") {
-      setResultIndex(0);
-    }
-    if (state.screen === "training") {
-      setTrainingChoices({});
-    }
-    if (state.screen === "skip-ahead") {
-      setSelectedWeek(Math.min(52, state.week + 1));
-    }
-    if (state.screen === "exhibition-match") {
-      setExhLines(null);
-      setExhError(null);
-      setExhPlayer1(null);
-      setExhPlayer2(null);
-      setExhSurface("hard");
-      setExhFocus1("court");
-      setExhFocus2("court");
-    }
-  }, [state.screen, state.week]);
 
   const go = (screen: ScreenKey) => setState((prev) => ({ ...prev, screen }));
 
@@ -151,30 +137,6 @@ export default function App() {
     setDetailPlayerId(playerId);
     setDetailBackScreen(backScreen);
     go("view-player-details");
-  };
-
-  const toggleTournamentPlayer = (tournamentName: string, player: PlayerTournamentEligibility) => {
-    if (player.qualify_tourney === 0) return;
-    const isMandatorySomewhere = availableTournaments.some((entry) => {
-      const found = entry.players.find((candidate) => candidate.player_id === player.player_id);
-      return found?.qualify_tourney === -1;
-    });
-    if (isMandatorySomewhere) return;
-
-    setSelectedByTournament((prev) => {
-      const next: Record<string, number[]> = {};
-      Object.entries(prev).forEach(([name, ids]) => {
-        const filtered = ids.filter((id) => id !== player.player_id);
-        if (filtered.length > 0) next[name] = filtered;
-      });
-
-      const current = prev[tournamentName] ?? [];
-      const alreadySelected = current.includes(player.player_id);
-      if (!alreadySelected) {
-        next[tournamentName] = [...(next[tournamentName] ?? []), player.player_id];
-      }
-      return next;
-    });
   };
 
   if (booting) {
@@ -874,4 +836,3 @@ export default function App() {
     </PaperProvider>
   );
 }
-
