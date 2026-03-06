@@ -30,7 +30,7 @@ export const TOURNAMENT_SCHEDULE: Record<number, Tournament[]> = {
       "prize_money": 159360
     },
     {
-      "name": "Bangkok Challenger",
+      "name": "Pattaya Challenger",
       "surface": "hard",
       "level": "challenger75",
       "country": "Thailand",
@@ -327,7 +327,7 @@ export const TOURNAMENT_SCHEDULE: Record<number, Tournament[]> = {
       "prize_money": 8800000
     },
     {
-      "name": "Phoenix Challenger",
+      "name": "Scottsdale Challenger",
       "surface": "hard",
       "level": "challenger125",
       "country": "USA",
@@ -548,7 +548,7 @@ export const TOURNAMENT_SCHEDULE: Record<number, Tournament[]> = {
       "prize_money": 106240
     },
     {
-      "name": "Bordeaux Challenger",
+      "name": "Montpellier Challenger",
       "surface": "clay",
       "level": "challenger75",
       "country": "France",
@@ -586,7 +586,7 @@ export const TOURNAMENT_SCHEDULE: Record<number, Tournament[]> = {
       "prize_money": 53000
     },
     {
-      "name": "Rome Challenger",
+      "name": "Turin Challenger",
       "surface": "clay",
       "level": "challenger75",
       "country": "Italy",
@@ -949,7 +949,7 @@ export const TOURNAMENT_SCHEDULE: Record<number, Tournament[]> = {
       "prize_money": 6573785
     },
     {
-      "name": "Cleveland Challenger",
+      "name": "Knoxville Challenger",
       "surface": "hard",
       "level": "challenger100",
       "country": "USA",
@@ -978,7 +978,7 @@ export const TOURNAMENT_SCHEDULE: Record<number, Tournament[]> = {
       "prize_money": 642735
     },
     {
-      "name": "Vancouver Challenger",
+      "name": "Halifax Challenger",
       "surface": "hard",
       "level": "challenger125",
       "country": "Canada",
@@ -1216,7 +1216,7 @@ export const TOURNAMENT_SCHEDULE: Record<number, Tournament[]> = {
   ],
   "45": [
     {
-      "name": "Bratislava Challenger",
+      "name": "Nitra Challenger",
       "surface": "hard",
       "level": "challenger100",
       "country": "Slovakia",
