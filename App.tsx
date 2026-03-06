@@ -385,7 +385,6 @@ export default function App() {
           />
           <Button label="Skip Ahead" variant="gold" onPress={() => go("skip-ahead")} />
           <Button label="Remove Player" variant="danger" onPress={() => go("remove-player")} />
-          <Button label="Scout Recruits" variant="secondary" onPress={() => go("recruit-territories")} />
         </View>
       )}
 
