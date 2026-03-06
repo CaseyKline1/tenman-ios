@@ -1164,7 +1164,6 @@ export const addRecruit = (state: GameState, playerId: number): GameState => {
   const exists = next.userPlayers.some((player) => player.player_id === playerId);
   if (!exists) {
     next.userPlayers.push(recruit);
-    refreshStandings(next.userPlayers);
   }
   next.offerRecruits = [];
   next.screen = "choose-tournament";
@@ -1181,7 +1180,6 @@ export const skipRecruits = (state: GameState): GameState => {
 export const removePlayer = (state: GameState, playerId: number): GameState => {
   const next = cloneState(state);
   next.userPlayers = next.userPlayers.filter((player) => player.player_id !== playerId);
-  refreshStandings(next.userPlayers);
   return next;
 };
 
@@ -1192,13 +1190,11 @@ export const promoteJunior = (state: GameState, playerId: number): GameState => 
   player.junior = false;
   player.ranking = 3000;
   player.weeks_ranked_1 = 0;
-  refreshStandings(next.userPlayers);
   return next;
 };
 
 export const getAvailableTournaments = (state: GameState): TournamentWithPlayers[] => {
   const working = cloneState(state);
-  refreshStandings(working.userPlayers);
 
   const eligible = working.userPlayers.filter((player) => player.injury_weeks === 0);
   const result: TournamentWithPlayers[] = [];
@@ -1283,7 +1279,6 @@ export const enterTournaments = (
   }
 
   markCurrentWeekProcessed(next);
-  refreshStandings(next.userPlayers);
   next.lastTournamentResults = output;
   next.screen = output.length ? "tournament-results" : "menu";
   return next;
