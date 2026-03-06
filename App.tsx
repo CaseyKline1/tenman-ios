@@ -90,16 +90,31 @@ const MASTERS_TOURNAMENTS = [
 const isMajorTournament = (name: string): boolean =>
   MAJOR_TOURNAMENTS.includes(name) || MASTERS_TOURNAMENTS.includes(name);
 
+const isSlamOrJuniorSlam = (name: string): boolean =>
+  MAJOR_TOURNAMENTS.includes(name) || (name.includes("Junior") && MAJOR_TOURNAMENTS.some((major) => name.includes(major)));
+
 const sortByTopFinish = (a: [string, number], b: [string, number]): number =>
   a[1] - b[1] || a[0].localeCompare(b[0]);
 
 const sortByWinsDesc = (a: [string, number], b: [string, number]): number =>
   b[1] - a[1] || a[0].localeCompare(b[0]);
 
-const sortByName = (a: [string, unknown], b: [string, unknown]): number =>
+const sortByName = <T,>(a: [string, T], b: [string, T]): number =>
   a[0].localeCompare(b[0]);
 
-const formatTopFinish = (top: number): string => `Top ${toInt(top)}`;
+const formatTopFinish = (top: number): string => {
+  const rounded = toInt(top);
+  if (rounded <= 1) return "Champion";
+  if (rounded === 2) return "Runner-up";
+  if (rounded === 4) return "Semifinals";
+  if (rounded === 8) return "Quarterfinals";
+  if (rounded === 16) return "Round of 16";
+  if (rounded === 32) return "Round of 32";
+  if (rounded === 64) return "Round of 64";
+  if (rounded === 128) return "Round of 128";
+  if (rounded === 256) return "Round of 256";
+  return `Top ${rounded}`;
+};
 
 const formatYears = (years: number[]): string => [...years]
   .map((year) => toInt(year))
@@ -143,6 +158,41 @@ const MiniStat = ({
   <View style={[styles.miniStat, tone !== "default" && styles[`miniStat_${tone}`]]}>
     <Text style={[styles.miniStatLabel, tone !== "default" && styles[`miniStatLabel_${tone}`]]}>{label}</Text>
     <Text style={[styles.miniStatValue, tone !== "default" && styles[`miniStatValue_${tone}`]]}>{value}</Text>
+  </View>
+);
+
+const DetailStatRow = ({
+  label,
+  value,
+  emphasizeLabel = false,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  emphasizeLabel?: boolean;
+  compact?: boolean;
+}) => (
+  <View style={[styles.detailRow, compact && styles.detailSubRow]}>
+    <Text
+      style={[
+        styles.detailRowLabel,
+        emphasizeLabel && styles.detailRowLabelStrong,
+      ]}
+      numberOfLines={1}
+      ellipsizeMode="tail"
+      adjustsFontSizeToFit
+      minimumFontScale={0.72}
+    >
+      {label}
+    </Text>
+    <Text
+      style={[styles.detailRowValue, compact && styles.detailSubRowValue]}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.75}
+    >
+      {value}
+    </Text>
   </View>
 );
 
@@ -532,6 +582,13 @@ export default function App() {
                   <MiniStat label="Earnings" value={formatMoney(player.career_earnings)} />
                 </View>
               }
+              action={
+                <Button
+                  label="More Info"
+                  variant="secondary"
+                  onPress={() => openPlayerDetails(player.player_id, "view-senior-players")}
+                />
+              }
             />
           ))}
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
@@ -552,10 +609,212 @@ export default function App() {
                   <MiniStat label="Best JR Rank" value={`#${toInt(player.best_junior_ranking)}`} />
                 </View>
               }
-              action={<Button label="Turn Pro" onPress={() => setState((prev) => promoteJunior(prev, player.player_id))} />}
+              action={(
+                <View style={styles.detailActions}>
+                  <Button
+                    label="More Info"
+                    variant="secondary"
+                    onPress={() => openPlayerDetails(player.player_id, "view-junior-players")}
+                  />
+                  <Button label="Turn Pro" onPress={() => setState((prev) => promoteJunior(prev, player.player_id))} />
+                </View>
+              )}
             />
           ))}
           <Button label="Back to Menu" variant="secondary" onPress={() => go("menu")} />
+        </View>
+      )}
+
+      {state.screen === "view-player-details" && (
+        <View style={styles.section}>
+          <Text style={styles.h2}>Player Details</Text>
+          {!detailPlayer ? (
+            <View style={styles.card}>
+              <Text style={styles.text}>Player not found in your roster.</Text>
+            </View>
+          ) : (
+            (() => {
+              const annualResults = Object.entries(detailPlayer.annual_results).sort(sortByTopFinish);
+              const lastYearResults = Object.entries(detailPlayer.last_year_results).sort(sortByTopFinish);
+              const majorCurrentResults = annualResults.filter(([name]) => isMajorTournament(name));
+              const majorLastResults = lastYearResults.filter(([name]) => isMajorTournament(name));
+              const majorBestResults = Object.entries(detailPlayer.best_results).sort(sortByTopFinish);
+              const juniorBigResults = Object.entries(detailPlayer.best_junior_results).sort(sortByTopFinish);
+              const titlesWon = Object.entries(detailPlayer.tournaments_won_share).sort(sortByName);
+              const h2hWins = Object.entries(detailPlayer.head_to_head_wins).sort(sortByWinsDesc);
+              const h2hBreakdown = Object.entries(detailPlayer.head_to_head_win_breakdown).sort(sortByName);
+
+              return (
+                <>
+                  <View style={styles.card}>
+                    <Text style={styles.cardTitle}>
+                      <CountryFlag countryName={detailPlayer.nationality} showName={false} /> {detailPlayer.name}
+                    </Text>
+                    <Text style={styles.text}>
+                      {detailPlayer.junior ? "Junior" : "Senior"} | Age {detailPlayer.age} | Rank #{toInt(detailPlayer.ranking)}
+                    </Text>
+                    <Text style={styles.text}>
+                      Season {detailPlayer.season_record.wins}-{detailPlayer.season_record.losses}
+                      {" | "}Career {detailPlayer.career_record.wins}-{detailPlayer.career_record.losses}
+                    </Text>
+                    <Text style={styles.text}>Career Earnings: {formatMoney(detailPlayer.career_earnings)}</Text>
+                    <View style={styles.rowWrap}>
+                      <MiniStat label={detailPlayer.junior ? "JR Points" : "Points"} value={toInt(detailPlayer.junior ? detailPlayer.junior_points : detailPlayer.points)} />
+                      <MiniStat label="Titles" value={detailPlayer.tournament_wins} />
+                      <MiniStat label="Slams" value={detailPlayer.grand_slam_wins} />
+                      <MiniStat label="Best Rank" value={`#${toInt(detailPlayer.best_ranking)}`} />
+                      <MiniStat label="Best JR Rank" value={`#${toInt(detailPlayer.best_junior_ranking)}`} />
+                      <MiniStat label="Weeks #1" value={detailPlayer.weeks_ranked_1} />
+                    </View>
+                  </View>
+
+                  <View style={styles.card}>
+                    <Text style={styles.detailSectionHeader}>Results This Year ({state.year})</Text>
+                    {annualResults.length === 0 ? (
+                      <Text style={styles.textMuted}>No tournament results recorded this year.</Text>
+                    ) : (
+                      annualResults.map(([name, top]) => (
+                        <DetailStatRow
+                          key={`annual-${name}`}
+                          label={name}
+                          value={formatTopFinish(top)}
+                          emphasizeLabel={isSlamOrJuniorSlam(name)}
+                        />
+                      ))
+                    )}
+                  </View>
+
+                  <View style={styles.card}>
+                    <Text style={styles.detailSectionHeader}>Results Last Year ({state.year - 1})</Text>
+                    {lastYearResults.length === 0 ? (
+                      <Text style={styles.textMuted}>No results stored for last season.</Text>
+                    ) : (
+                      lastYearResults.map(([name, top]) => (
+                        <DetailStatRow
+                          key={`last-${name}`}
+                          label={name}
+                          value={formatTopFinish(top)}
+                          emphasizeLabel={isSlamOrJuniorSlam(name)}
+                        />
+                      ))
+                    )}
+                  </View>
+
+                  <View style={styles.card}>
+                    <Text style={styles.detailSectionHeader}>Major Tournament Snapshot</Text>
+                    <Text style={styles.h3}>This Year</Text>
+                    {majorCurrentResults.length === 0 ? (
+                      <Text style={styles.textMuted}>No major results this year yet.</Text>
+                    ) : (
+                      majorCurrentResults.map(([name, top]) => (
+                        <DetailStatRow
+                          key={`major-current-${name}`}
+                          label={name}
+                          value={formatTopFinish(top)}
+                          emphasizeLabel={isSlamOrJuniorSlam(name)}
+                        />
+                      ))
+                    )}
+                    <Text style={styles.h3}>Last Year</Text>
+                    {majorLastResults.length === 0 ? (
+                      <Text style={styles.textMuted}>No major results from last year.</Text>
+                    ) : (
+                      majorLastResults.map(([name, top]) => (
+                        <DetailStatRow
+                          key={`major-last-${name}`}
+                          label={name}
+                          value={formatTopFinish(top)}
+                          emphasizeLabel={isSlamOrJuniorSlam(name)}
+                        />
+                      ))
+                    )}
+                    <Text style={styles.h3}>Best Senior Major Finishes</Text>
+                    {majorBestResults.length === 0 ? (
+                      <Text style={styles.textMuted}>No recorded major best finishes yet.</Text>
+                    ) : (
+                      majorBestResults.map(([name, top]) => (
+                        <DetailStatRow
+                          key={`major-best-${name}`}
+                          label={name}
+                          value={formatTopFinish(top)}
+                          emphasizeLabel={isSlamOrJuniorSlam(name)}
+                        />
+                      ))
+                    )}
+                    <Text style={styles.h3}>Best Junior Big Event Finishes</Text>
+                    {juniorBigResults.length === 0 ? (
+                      <Text style={styles.textMuted}>No recorded junior big-event best finishes yet.</Text>
+                    ) : (
+                      juniorBigResults.map(([name, top]) => (
+                        <DetailStatRow
+                          key={`junior-best-${name}`}
+                          label={name}
+                          value={formatTopFinish(top)}
+                          emphasizeLabel={isSlamOrJuniorSlam(name)}
+                        />
+                      ))
+                    )}
+                  </View>
+
+                  <View style={styles.card}>
+                    <Text style={styles.detailSectionHeader}>Titles Won</Text>
+                    {titlesWon.length === 0 ? (
+                      <Text style={styles.textMuted}>No titles won yet.</Text>
+                    ) : (
+                      titlesWon.map(([name, years]) => (
+                        <DetailStatRow
+                          key={`titles-${name}`}
+                          label={name}
+                          value={formatYears(years)}
+                          emphasizeLabel={isSlamOrJuniorSlam(name)}
+                        />
+                      ))
+                    )}
+                  </View>
+
+                  <View style={styles.card}>
+                    <Text style={styles.detailSectionHeader}>Head-to-Head Matchups</Text>
+                    {h2hWins.length === 0 ? (
+                      <Text style={styles.textMuted}>No head-to-head wins recorded yet.</Text>
+                    ) : (
+                      h2hWins.map(([opponent, wins]) => (
+                        <DetailStatRow
+                          key={`h2h-${opponent}`}
+                          label={opponent}
+                          value={`${wins} win${wins === 1 ? "" : "s"}`}
+                        />
+                      ))
+                    )}
+                  </View>
+
+                  <View style={styles.card}>
+                    <Text style={styles.detailSectionHeader}>Head-to-Head Breakdown</Text>
+                    {h2hBreakdown.length === 0 ? (
+                      <Text style={styles.textMuted}>No matchup breakdown data yet.</Text>
+                    ) : (
+                      h2hBreakdown.map(([opponent, tournaments]) => (
+                        <View key={`breakdown-${opponent}`} style={styles.detailGroup}>
+                          <Text style={styles.detailGroupTitle}>{opponent}</Text>
+                          {Object.entries(tournaments)
+                            .sort(sortByName)
+                            .map(([tournamentName, years]) => (
+                              <DetailStatRow
+                                key={`${opponent}-${tournamentName}`}
+                                label={tournamentName}
+                                value={formatYears(years)}
+                                emphasizeLabel={isSlamOrJuniorSlam(tournamentName)}
+                                compact
+                              />
+                            ))}
+                        </View>
+                      ))
+                    )}
+                  </View>
+                </>
+              );
+            })()
+          )}
+          <Button label="Back" variant="secondary" onPress={() => go(detailBackScreen)} />
         </View>
       )}
 
@@ -819,6 +1078,10 @@ const styles = StyleSheet.create({
     color: "#dbeafe",
     fontSize: 14,
   },
+  textMuted: {
+    color: "#94a3b8",
+    fontSize: 13,
+  },
   input: {
     borderWidth: 1,
     borderColor: "#2563eb",
@@ -834,6 +1097,9 @@ const styles = StyleSheet.create({
   rowButtons: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 8,
+  },
+  detailActions: {
     gap: 8,
   },
   topLeftAction: {
@@ -890,6 +1156,19 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: "#e2e8f0",
     fontSize: 16,
+    fontWeight: "700",
+  },
+  detailSectionHeader: {
+    color: "#93c5fd",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  detailGroup: {
+    gap: 4,
+  },
+  detailGroupTitle: {
+    color: "#e2e8f0",
+    fontSize: 13,
     fontWeight: "700",
   },
   injuryBanner: {
@@ -992,6 +1271,45 @@ const styles = StyleSheet.create({
     borderLeftColor: "#0ea5e9",
     paddingLeft: 8,
     paddingVertical: 3,
+  },
+  detailRow: {
+    color: "#e0f2fe",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: "#1d4ed8",
+    paddingLeft: 8,
+    paddingVertical: 2,
+  },
+  detailSubRow: {
+    marginLeft: 8,
+    borderLeftColor: "#2563eb",
+  },
+  detailRowLabel: {
+    color: "#e0f2fe",
+    fontSize: 13,
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
+    paddingRight: 8,
+  },
+  detailRowLabelStrong: {
+    fontWeight: "700",
+  },
+  detailRowValue: {
+    color: "#bfdbfe",
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "right",
+    minWidth: 84,
+    maxWidth: "42%",
+  },
+  detailSubRowValue: {
+    color: "#93c5fd",
+    fontSize: 12,
+    minWidth: 96,
   },
   error: {
     color: "#fca5a5",
