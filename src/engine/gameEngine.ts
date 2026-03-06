@@ -1192,10 +1192,20 @@ export const playExhibitionMatch = (
   focus2: ExhibitionFocus,
 ): { state: GameState; lines: string[]; error?: string } => {
   const next = cloneState(state);
+  if (!canRunExhibition(next)) {
+    return { state: next, lines: [], error: "Exhibition matches are only available before week 48" };
+  }
+
   const player1 = next.userPlayers.find((entry) => entry.player_id === player1Id);
   const player2 = next.userPlayers.find((entry) => entry.player_id === player2Id);
   if (!player1 || !player2 || player1.player_id === player2.player_id) {
     return { state: next, lines: [], error: "Please select two different players" };
+  }
+  if (player1.injury_weeks > 0 || player2.injury_weeks > 0) {
+    return { state: next, lines: [], error: "Both players must be healthy for an exhibition match" };
+  }
+  if (player1.energy < 40 || player2.energy < 40) {
+    return { state: next, lines: [], error: "Both players need at least 40 energy for an exhibition match" };
   }
 
   const pseudoTournament: Tournament = {
