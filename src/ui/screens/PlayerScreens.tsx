@@ -367,7 +367,7 @@ export const TrainingScreen = ({
       onPress={onSubmitTraining}
       disabled={trainingEligible.length > 0 && trainingEligible.some((player) => trainingChoices[player.player_id] === undefined)}
     />
-    <Button label="Back to Menu" variant="secondary" onPress={onBack} />
+    {trainingEligible.length === 0 && <Button label="Back to Menu" variant="secondary" onPress={onBack} />}
   </Section>
 );
 
