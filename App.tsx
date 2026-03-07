@@ -166,11 +166,6 @@ export default function App() {
               if (!trimmed) return;
               setState(startNewGame(trimmed));
             }}
-            onClearSave={async () => {
-              await clearGameState();
-              setState(createInitialState());
-              setUsername("");
-            }}
           />
         );
       case "recruit-territories":

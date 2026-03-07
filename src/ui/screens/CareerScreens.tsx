@@ -11,10 +11,9 @@ type LandingScreenProps = {
   username: string;
   setUsername: React.Dispatch<React.SetStateAction<string>>;
   onStart: () => void;
-  onClearSave: () => void;
 };
 
-export const LandingScreen = ({ username, setUsername, onStart, onClearSave }: LandingScreenProps) => (
+export const LandingScreen = ({ username, setUsername, onStart }: LandingScreenProps) => (
   <Section>
     <PaperText style={styles.h2}>Start New Career</PaperText>
     <PaperTextInput
@@ -29,8 +28,6 @@ export const LandingScreen = ({ username, setUsername, onStart, onClearSave }: L
       textColor="#000000"
     />
     <Button label="Start Your Journey" onPress={onStart} disabled={!username.trim()} />
-    <View style={styles.spacer} />
-    <Button label="Clear Saved Progress" variant="danger" onPress={onClearSave} />
   </Section>
 );
 
