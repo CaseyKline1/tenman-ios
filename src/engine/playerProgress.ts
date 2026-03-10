@@ -56,6 +56,8 @@ export const endOfYear = (state: GameState) => {
     if (player.age > 18 && player.junior) {
       player.junior = false;
       player.ranking = 3000;
+      player.junior_points = 0;
+      player.junior_points_inputs = {};
       player.weeks_ranked_1 = 0;
     }
 
@@ -74,9 +76,9 @@ export const endOfYear = (state: GameState) => {
 };
 
 const checkForInjury = (player: Player) => {
-  const ageFactor = player.age > 35 ? 0.03 : player.age > 30 ? 0.015 : 0;
+  const ageFactor = player.age > 35 ? 0.025 : player.age > 30 ? 0.012 : 0;
   const energyRisk = clamp((ENERGY_MAX - player.energy) / ENERGY_MAX, 0, 1);
-  const injuryChance = energyRisk * (0.04 + player.injury_prone * 0.08) + ageFactor;
+  const injuryChance = energyRisk * (0.035 + player.injury_prone * 0.07) + ageFactor;
   if (Math.random() < injuryChance) {
     const weeks = randomInt(1, 12);
     player.injury_weeks += weeks;

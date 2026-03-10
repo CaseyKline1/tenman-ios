@@ -20,7 +20,7 @@ import { clamp, randomBetween } from "./random";
 import { markCurrentWeekProcessed, resetSkippedTournamentPoints } from "./scheduleProcessing";
 import { cloneState } from "./stateClone";
 import { runTournament, simulateExhibitionMatch } from "./tournamentSimulation";
-import { lockTournamentEligibilityForWeek } from "./tournamentEligibility";
+import { getAvailableTournaments, lockTournamentEligibilityForWeek } from "./tournamentEligibility";
 
 export { advanceWeek, skipToNextYear, skipToWeek } from "./calendarProgression";
 export { getTournamentSchedule } from "./scheduleProcessing";
@@ -111,6 +111,8 @@ export const promoteJunior = (state: GameState, playerId: number): GameState => 
   if (!player) return next;
   player.junior = false;
   player.ranking = 3000;
+  player.junior_points = 0;
+  player.junior_points_inputs = {};
   player.weeks_ranked_1 = 0;
   return next;
 };
@@ -128,11 +130,58 @@ export const enterTournaments = (
   const juniorTournament = JUNIOR_TOURNAMENT_SCHEDULE[next.week];
   if (juniorTournament) tournamentsByName[juniorTournament.name] = juniorTournament;
 
+  lockTournamentEligibilityForWeek(next);
+  const available = getAvailableTournaments(next);
+  const eligibleByTournament: Record<string, Set<number>> = {};
+  const playerQualByTournament: Record<string, Record<number, number>> = {};
+  const pointsByTournament: Record<string, number> = {};
+  for (const { tournament, players } of available) {
+    eligibleByTournament[tournament.name] = new Set(
+      players.filter((player) => player.qualify_tourney !== 0).map((player) => player.player_id),
+    );
+    playerQualByTournament[tournament.name] = {};
+    for (const player of players) {
+      playerQualByTournament[tournament.name][player.player_id] = player.qualify_tourney;
+    }
+    pointsByTournament[tournament.name] = tournament.points;
+  }
+
+  const playerBestChoice = new Map<number, { tournamentName: string; qualify: number; points: number }>();
+  for (const [name, playerIds] of Object.entries(selectedByTournament)) {
+    const eligibleSet = eligibleByTournament[name];
+    if (!eligibleSet || playerIds.length === 0) continue;
+    for (const playerId of playerIds) {
+      if (!eligibleSet.has(playerId)) continue;
+      const qualify = playerQualByTournament[name]?.[playerId] ?? 0;
+      if (qualify === 0) continue;
+      const points = pointsByTournament[name] ?? 0;
+      const current = playerBestChoice.get(playerId);
+      if (!current) {
+        playerBestChoice.set(playerId, { tournamentName: name, qualify, points });
+        continue;
+      }
+      const currentMandatory = current.qualify === -1 ? 1 : 0;
+      const nextMandatory = qualify === -1 ? 1 : 0;
+      if (
+        nextMandatory > currentMandatory ||
+        (nextMandatory === currentMandatory && points > current.points)
+      ) {
+        playerBestChoice.set(playerId, { tournamentName: name, qualify, points });
+      }
+    }
+  }
+
+  const sanitizedSelections: Record<string, number[]> = {};
+  for (const [playerId, selected] of playerBestChoice.entries()) {
+    sanitizedSelections[selected.tournamentName] = sanitizedSelections[selected.tournamentName] ?? [];
+    sanitizedSelections[selected.tournamentName].push(playerId);
+  }
+
   // Defend this week's points by default; selected participants overwrite with their results.
   resetSkippedTournamentPoints(next.userPlayers, next.week, next.week);
 
   const output: TournamentResult[] = [];
-  for (const [name, playerIds] of Object.entries(selectedByTournament)) {
+  for (const [name, playerIds] of Object.entries(sanitizedSelections)) {
     const tournament = tournamentsByName[name];
     if (!tournament || playerIds.length === 0) continue;
     const players = next.userPlayers.filter((player) => playerIds.includes(player.player_id));
