@@ -142,18 +142,21 @@ export const MenuScreen = ({
       <PaperText style={styles.h2}>Menu</PaperText>
       <PaperText style={styles.menuCash}>Cash: {formatMoney(cash)}</PaperText>
     </View>
-    <Button label="Advance Week" onPress={onAdvanceWeek} />
-    <Button label="View Senior Players" onPress={onViewSeniorPlayers} />
-    <Button label="View Junior Players" onPress={onViewJuniorPlayers} />
-    <Button label="Upcoming Tournaments" onPress={onViewSchedule} />
-    <Button
-      label={exhibitionAvailable ? "Exhibition Match" : "Exhibition Match (Before Week 48)"}
-      onPress={onExhibition}
-      disabled={!exhibitionAvailable}
-    />
-    <Button label="Skip Ahead" variant="gold" onPress={onSkipAhead} />
-    <Button label="Remove Player" variant="danger" onPress={onRemovePlayer} />
-    <Button label="Retire Agent" variant="danger" onPress={onRetire} />
+    <View style={styles.menuButtonStack}>
+      <Button label="Advance Week" onPress={onAdvanceWeek} contentStyle={styles.menuButtonContent} />
+      <Button label="View Senior Players" onPress={onViewSeniorPlayers} contentStyle={styles.menuButtonContent} />
+      <Button label="View Junior Players" onPress={onViewJuniorPlayers} contentStyle={styles.menuButtonContent} />
+      <Button label="Upcoming Tournaments" onPress={onViewSchedule} contentStyle={styles.menuButtonContent} />
+      <Button
+        label={exhibitionAvailable ? "Exhibition Match" : "Exhibition Match (Before Week 48)"}
+        onPress={onExhibition}
+        disabled={!exhibitionAvailable}
+        contentStyle={styles.menuButtonContent}
+      />
+      <Button label="Skip Ahead" variant="gold" onPress={onSkipAhead} contentStyle={styles.menuButtonContent} />
+      <Button label="Remove Player" variant="danger" onPress={onRemovePlayer} contentStyle={styles.menuButtonContent} />
+      <Button label="Retire Agent" variant="danger" onPress={onRetire} contentStyle={styles.menuButtonContent} />
+    </View>
   </Section>
 );
 

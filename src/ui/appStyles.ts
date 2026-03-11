@@ -56,6 +56,12 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  menuButtonStack: {
+    gap: 12,
+  },
+  menuButtonContent: {
+    paddingVertical: 7,
+  },
   h3: {
     color: "#000000",
     fontSize: 16,
@@ -80,6 +86,27 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+  },
+  tournamentHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+  },
+  tournamentHeaderLocation: {
+    textAlign: "right",
+    flexShrink: 1,
+    fontSize: 14,
+  },
+  tournamentMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+  },
+  tournamentMetaRight: {
+    textAlign: "right",
+    flexShrink: 1,
   },
   detailActions: {
     gap: 8,

@@ -154,19 +154,19 @@ export const PlayerCard = ({
       </View>
     )}
     <View style={styles.rowWrap}>
+      <MiniStat label="Rank" value={`#${toInt(player.ranking)}`} />
+      {inlineExtraStat}
       <MiniStat label="Age" value={player.age} />
       <MiniStat label="Overall" value={toInt(player.overall)} />
       <MiniStat label="Potential" value={player.potential_letter} />
       <MiniStat label="Share" value={`${player.earnings_share}%`} />
-      <MiniStat label="Rank" value={`#${toInt(player.ranking)}`} />
       <MiniStat label="Energy" value={toInt(player.energy)} />
       <MiniStat label="Serve" value={toInt(player.serve)} />
-      <MiniStat label="Stamina" value={toInt(player.stamina)} />
-      <MiniStat label="Clutch" value={toInt(player.big_moments)} />
       <MiniStat label="Hard" value={toInt(player.court_proficiencies.hard)} tone="hard" />
       <MiniStat label="Clay" value={toInt(player.court_proficiencies.clay)} tone="clay" />
       <MiniStat label="Grass" value={toInt(player.court_proficiencies.grass)} tone="grass" />
-      {inlineExtraStat}
+      <MiniStat label="Stamina" value={toInt(player.stamina)} />
+      <MiniStat label="Clutch" value={toInt(player.big_moments)} />
     </View>
     {extra}
     {action}

@@ -27,10 +27,16 @@ export const ChooseTournamentScreen = ({
     <PaperText style={styles.h2}>Choose Tournaments</PaperText>
     {availableTournaments.map(({ tournament, players, isJunior }) => (
       <CardBlock key={tournament.name} style={styles[`cardSurface_${tournament.surface}`]}>
-        <PaperText style={styles.cardTitle}>{tournament.name}</PaperText>
-        <PaperText style={styles.text}><CountryFlag countryName={tournament.country} /></PaperText>
-        <PaperText style={styles.text}>Level: {formatTournamentLevel(String(tournament.level))}</PaperText>
-        <PaperText style={styles.text}>Prize: {formatMoney(tournament.prize_money)}</PaperText>
+        <View style={styles.tournamentHeaderRow}>
+          <PaperText style={styles.cardTitle}>{tournament.name}</PaperText>
+          <PaperText style={[styles.text, styles.tournamentHeaderLocation]}>
+            <CountryFlag countryName={tournament.country} />
+          </PaperText>
+        </View>
+        <View style={styles.tournamentMetaRow}>
+          <PaperText style={styles.text}>Level: {formatTournamentLevel(String(tournament.level))}</PaperText>
+          <PaperText style={[styles.text, styles.tournamentMetaRight]}>Prize: {formatMoney(tournament.prize_money)}</PaperText>
+        </View>
 
         {players.length === 0 ? (
           <PaperText style={styles.text}>{isJunior ? "No junior players available." : "No senior players available."}</PaperText>
