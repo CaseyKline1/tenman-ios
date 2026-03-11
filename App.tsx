@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ActivityIndicator as PaperActivityIndicator,
   Provider as PaperProvider,
@@ -144,10 +145,12 @@ export default function App() {
   if (booting) {
     return (
       <PaperProvider theme={paperTheme}>
-        <View style={styles.loadingScreen}>
-          <PaperActivityIndicator size="large" color="#2563eb" />
-          <PaperText style={styles.loadingText}>Loading Tenman iOS save...</PaperText>
-        </View>
+        <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+          <View style={styles.loadingScreen}>
+            <PaperActivityIndicator size="large" color="#2563eb" />
+            <PaperText style={styles.loadingText}>Loading Tenman iOS save...</PaperText>
+          </View>
+        </SafeAreaView>
       </PaperProvider>
     );
   }
@@ -336,10 +339,12 @@ export default function App() {
 
   return (
     <PaperProvider theme={paperTheme}>
-      <ScrollView style={styles.app} contentContainerStyle={styles.container}>
-        <PaperText style={styles.subtitle}>{getWeeklyHeader(state)}</PaperText>
-        {renderScreen()}
-      </ScrollView>
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+        <ScrollView style={styles.app} contentContainerStyle={styles.container}>
+          <PaperText style={styles.subtitle}>{getWeeklyHeader(state)}</PaperText>
+          {renderScreen()}
+        </ScrollView>
+      </SafeAreaView>
     </PaperProvider>
   );
 }
