@@ -123,6 +123,7 @@ export interface InjuryAlert {
   player_id: number;
   player_name: string;
   weeks_out: number;
+  reaggravated: boolean;
 }
 
 export interface GameState {

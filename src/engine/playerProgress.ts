@@ -88,7 +88,7 @@ const checkForInjury = (player: Player) => {
 };
 
 export const applyWeeklyPlayerProgress = (player: Player): InjuryAlert | null => {
-  const wasHealthy = player.injury_weeks === 0;
+  const wasInjured = player.injury_weeks > 0;
   player.injury_weeks = Math.max(0, player.injury_weeks - 1);
   const injuredThisWeek = checkForInjury(player);
   player.energy = player.junior
@@ -99,11 +99,12 @@ export const applyWeeklyPlayerProgress = (player: Player): InjuryAlert | null =>
   player.clay_heat = Math.pow(player.clay_heat, 2 / 3);
   player.grass_heat = Math.pow(player.grass_heat, 2 / 3);
 
-  if (wasHealthy && injuredThisWeek) {
+  if (injuredThisWeek) {
     return {
       player_id: player.player_id,
       player_name: player.name,
       weeks_out: player.injury_weeks,
+      reaggravated: wasInjured,
     };
   }
   return null;

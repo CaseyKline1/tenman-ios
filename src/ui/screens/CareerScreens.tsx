@@ -101,9 +101,13 @@ export const InjuryAlertScreen = ({ injuryAlerts, onContinue }: InjuryAlertScree
     ) : (
       injuryAlerts.map((alert, index) => (
         <CardBlock key={`${alert.player_id}-${index}`} style={styles.injuryAlertCard}>
-          <PaperText style={styles.injuryAlertTitle}>{alert.player_name} has been injured.</PaperText>
+          <PaperText style={styles.injuryAlertTitle}>
+            {alert.reaggravated
+              ? `${alert.player_name} re-aggravated their injury.`
+              : `${alert.player_name} has been injured.`}
+          </PaperText>
           <PaperText style={styles.injuryAlertText}>
-            Injured: out {alert.weeks_out} {alert.weeks_out === 1 ? "week" : "weeks"}
+            Out {alert.weeks_out} {alert.weeks_out === 1 ? "week" : "weeks"}
           </PaperText>
         </CardBlock>
       ))

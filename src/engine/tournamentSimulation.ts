@@ -144,7 +144,7 @@ export const runTournament = (
       agentEarnings += calculateAgentCut(player, payout);
     }
 
-    const resultTop = Math.max(1, Math.pow(2, Math.max(0, rounds - Math.min(roundOut, rounds) + 1)));
+    const resultTop = Math.max(1, Math.pow(2, Math.max(0, rounds - roundOut + 1)));
     updateBestResults(player, tournament, resultTop, lines);
     player.annual_results[tournament.name] = resultTop;
   }
