@@ -123,7 +123,12 @@ export const lockTournamentEligibilityForWeek = (state: GameState) => {
 export const getAvailableTournaments = (state: GameState): TournamentWithPlayers[] => {
   lockTournamentEligibilityForWeek(state);
 
-  const eligible = state.userPlayers.filter((player) => player.injury_weeks === 0);
+  const eligible = state.userPlayers.filter(
+    (player) =>
+      player.injury_weeks === 0 &&
+      (player.suspension_weeks_remaining ?? 0) === 0 &&
+      (player.break_weeks_remaining ?? 0) === 0,
+  );
   const result: TournamentWithPlayers[] = [];
 
   const seniorTournaments = TOURNAMENT_SCHEDULE[state.week] ?? [];

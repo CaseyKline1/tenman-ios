@@ -2,7 +2,7 @@ import React from "react";
 import { View } from "react-native";
 import { Text as PaperText, TextInput as PaperTextInput } from "react-native-paper";
 import { RecruitTerritoryOption } from "../../data/recruiting";
-import { InjuryAlert, Player } from "../../types/game";
+import { InjuryAlert, Player, QuarterlyScenario } from "../../types/game";
 import { Button, CardBlock, MiniStat, PlayerCard, Section } from "../AppPrimitives";
 import { formatMoney, toInt } from "../appHelpers";
 import { styles } from "../appStyles";
@@ -181,6 +181,157 @@ export const RetireAgentScreen = ({ onDelete, onBack }: RetireAgentScreenProps) 
     <Button label="Back to Menu" variant="secondary" onPress={onBack} />
   </Section>
 );
+
+type QuarterlyScenarioScreenProps = {
+  scenario: QuarterlyScenario;
+  agentCash: number;
+  year: number;
+  onContinue: () => void;
+  onAccept: () => void;
+  onDecline: () => void;
+};
+
+export const QuarterlyScenarioScreen = ({
+  scenario,
+  agentCash,
+  year,
+  onContinue,
+  onAccept,
+  onDecline,
+}: QuarterlyScenarioScreenProps) => {
+  const { type } = scenario;
+
+  if (type === "steroids_ban") {
+    return (
+      <Section>
+        <PaperText style={styles.h2}>Drug Suspension</PaperText>
+        <CardBlock style={styles.injuryAlertCard}>
+          <PaperText style={styles.injuryAlertTitle}>
+            {scenario.affected_player_name} has tested positive for banned substances.
+          </PaperText>
+          <PaperText style={styles.injuryAlertText}>
+            Suspended for 12 months. They cannot compete during this period.
+          </PaperText>
+        </CardBlock>
+        <Button label="Continue" onPress={onContinue} />
+      </Section>
+    );
+  }
+
+  if (type === "player_break") {
+    return (
+      <Section>
+        <PaperText style={styles.h2}>Player Taking a Break</PaperText>
+        <CardBlock>
+          <PaperText style={styles.h3}>{scenario.affected_player_name}</PaperText>
+          <PaperText style={styles.text}>
+            Has decided to step away from tennis for {scenario.break_months} months to recharge.
+            They will not be available to compete during this period.
+          </PaperText>
+        </CardBlock>
+        <Button label="Continue" onPress={onContinue} />
+      </Section>
+    );
+  }
+
+  if (type === "potential_boost") {
+    return (
+      <Section>
+        <PaperText style={styles.h2}>Renewed Commitment</PaperText>
+        <CardBlock>
+          <PaperText style={styles.h3}>{scenario.affected_player_name}</PaperText>
+          <PaperText style={styles.text}>
+            Has fully recommitted to training with renewed determination! Their potential ceiling has increased by {scenario.potential_change} points.
+          </PaperText>
+          {scenario.new_potential_letter && (
+            <PaperText style={styles.text}>New potential: {scenario.new_potential_letter}</PaperText>
+          )}
+        </CardBlock>
+        <Button label="Continue" onPress={onContinue} />
+      </Section>
+    );
+  }
+
+  if (type === "potential_decline") {
+    return (
+      <Section>
+        <PaperText style={styles.h2}>Motivation Concerns</PaperText>
+        <CardBlock>
+          <PaperText style={styles.h3}>{scenario.affected_player_name}</PaperText>
+          <PaperText style={styles.text}>
+            Seems to have lost their passion for the game and is going through the motions. Their potential ceiling has declined by {Math.abs(scenario.potential_change ?? 0)} points.
+          </PaperText>
+          {scenario.new_potential_letter && (
+            <PaperText style={styles.text}>New potential: {scenario.new_potential_letter}</PaperText>
+          )}
+        </CardBlock>
+        <Button label="Continue" onPress={onContinue} />
+      </Section>
+    );
+  }
+
+  if (type === "endorsement_offer" && scenario.endorsement_offer) {
+    const offer = scenario.endorsement_offer;
+    const canAfford = true;
+    return (
+      <Section>
+        <PaperText style={styles.h2}>Endorsement Offer</PaperText>
+        <CardBlock>
+          <PaperText style={styles.h3}>{offer.player_name}</PaperText>
+          <PaperText style={styles.text}>
+            Has received a sponsorship offer from {offer.brand}.
+          </PaperText>
+          <View style={styles.rowWrap}>
+            <MiniStat label="Total Value" value={formatMoney(offer.total_value)} />
+            <MiniStat label="Duration" value={`${offer.years} yr${offer.years > 1 ? "s" : ""}`} />
+            <MiniStat label="Your Cut" value={formatMoney(offer.agent_cut)} />
+          </View>
+          <PaperText style={styles.textMuted}>
+            Agent commission paid upfront upon acceptance.
+          </PaperText>
+        </CardBlock>
+        <Button label={`Accept — Earn ${formatMoney(offer.agent_cut)}`} onPress={onAccept} />
+        <Button label="Decline" variant="secondary" onPress={onDecline} />
+      </Section>
+    );
+  }
+
+  if ((type === "star_vet" || type === "superstar_youngster") && scenario.recruit_offer) {
+    const recruit = scenario.recruit_offer;
+    const cost = scenario.recruit_cost ?? 0;
+    const canAfford = agentCash >= cost;
+    const title = type === "star_vet" ? "Star Veteran Available" : "Superstar Youngster Discovered";
+    const description =
+      type === "star_vet"
+        ? `${recruit.name} is an experienced pro seeking new representation.`
+        : `Scouts have identified an extraordinary junior talent: ${recruit.name}, age ${recruit.age}.`;
+    return (
+      <Section>
+        <PaperText style={styles.h2}>{title}</PaperText>
+        <PaperText style={styles.text}>{description}</PaperText>
+        <PlayerCard player={recruit} />
+        <CardBlock>
+          <PaperText style={styles.text}>
+            Signing fee: {formatMoney(cost)}
+          </PaperText>
+          <PaperText style={styles.menuCash}>Cash: {formatMoney(agentCash)}</PaperText>
+          {!canAfford && (
+            <PaperText style={styles.error}>Insufficient funds to sign this player.</PaperText>
+          )}
+        </CardBlock>
+        <Button label={`Sign — ${formatMoney(cost)}`} onPress={onAccept} disabled={!canAfford} />
+        <Button label="Pass" variant="secondary" onPress={onDecline} />
+      </Section>
+    );
+  }
+
+  return (
+    <Section>
+      <PaperText style={styles.h2}>Quarterly Event</PaperText>
+      <Button label="Continue" onPress={onContinue} />
+    </Section>
+  );
+};
 
 type SkipAheadScreenProps = {
   currentWeek: number;

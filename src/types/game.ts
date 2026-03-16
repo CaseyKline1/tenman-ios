@@ -47,6 +47,42 @@ export interface RecordStat {
   losses: number;
 }
 
+export interface Endorsement {
+  brand: string;
+  total_value: number;
+  years: number;
+  end_year: number;
+  agent_cut: number;
+}
+
+export type QuarterlyScenarioType =
+  | "steroids_ban"
+  | "player_break"
+  | "star_vet"
+  | "superstar_youngster"
+  | "potential_boost"
+  | "potential_decline"
+  | "endorsement_offer";
+
+export interface QuarterlyScenario {
+  type: QuarterlyScenarioType;
+  affected_player_id?: number;
+  affected_player_name?: string;
+  break_months?: number;
+  endorsement_offer?: {
+    player_id: number;
+    player_name: string;
+    brand: string;
+    total_value: number;
+    years: number;
+    agent_cut: number;
+  };
+  recruit_offer?: Player;
+  recruit_cost?: number;
+  potential_change?: number;
+  new_potential_letter?: string;
+}
+
 export interface Player {
   player_id: number;
   recruited_from: string;
@@ -81,6 +117,10 @@ export interface Player {
   hard_heat: number;
   clay_heat: number;
   grass_heat: number;
+  endorsement?: Endorsement;
+  suspension_weeks_remaining?: number;
+  break_weeks_remaining?: number;
+  is_promising_junior?: boolean;
   qualify_tourney: Record<string, number>;
   required_ranking: Record<string, number>;
   points_inputs: Record<string, number>;
@@ -112,7 +152,8 @@ export type ScreenKey =
   | "remove-player"
   | "skip-ahead"
   | "view-tournament-schedule"
-  | "exhibition-match";
+  | "exhibition-match"
+  | "quarterly-scenario";
 
 export interface TournamentResult {
   tournamentName: string;
@@ -139,6 +180,9 @@ export interface GameState {
   lastTournamentResults: TournamentResult[];
   injuryAlerts?: InjuryAlert[];
   postInjuryAlertScreen?: ScreenKey;
+  pending_scenario?: QuarterlyScenario;
+  post_scenario_screen?: ScreenKey;
+  quarterly_scenarios_seen?: number[];
   screen: ScreenKey;
 }
 

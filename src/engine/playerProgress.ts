@@ -53,6 +53,14 @@ export const endOfYear = (state: GameState) => {
   state.userPlayers = state.userPlayers.filter((player) => player.age <= 40);
 
   for (const player of state.userPlayers) {
+    if (player.endorsement && player.endorsement.end_year <= state.year) {
+      player.endorsement = undefined;
+    }
+  }
+
+  state.quarterly_scenarios_seen = [];
+
+  for (const player of state.userPlayers) {
     if (player.age > 18 && player.junior) {
       player.junior = false;
       player.ranking = 3000;
@@ -90,6 +98,12 @@ const checkForInjury = (player: Player) => {
 export const applyWeeklyPlayerProgress = (player: Player): InjuryAlert | null => {
   const wasInjured = player.injury_weeks > 0;
   player.injury_weeks = Math.max(0, player.injury_weeks - 1);
+  if ((player.suspension_weeks_remaining ?? 0) > 0) {
+    player.suspension_weeks_remaining = Math.max(0, (player.suspension_weeks_remaining ?? 0) - 1);
+  }
+  if ((player.break_weeks_remaining ?? 0) > 0) {
+    player.break_weeks_remaining = Math.max(0, (player.break_weeks_remaining ?? 0) - 1);
+  }
   const injuredThisWeek = checkForInjury(player);
   player.energy = player.junior
     ? clamp(player.energy + 7, 1, ENERGY_MAX)

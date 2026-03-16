@@ -247,6 +247,52 @@ export const trainPlayers = (state: GameState, choices: Record<number, number>):
   return next;
 };
 
+export const dismissQuarterlyScenario = (state: GameState): GameState => {
+  const next = cloneState(state);
+  next.pending_scenario = undefined;
+  next.screen = next.post_scenario_screen ?? "menu";
+  next.post_scenario_screen = undefined;
+  return next;
+};
+
+export const acceptEndorsement = (state: GameState): GameState => {
+  const next = cloneState(state);
+  const offer = next.pending_scenario?.endorsement_offer;
+  if (offer) {
+    const player = next.userPlayers.find((p) => p.player_id === offer.player_id);
+    if (player) {
+      player.endorsement = {
+        brand: offer.brand,
+        total_value: offer.total_value,
+        years: offer.years,
+        end_year: next.year + offer.years,
+        agent_cut: offer.agent_cut,
+      };
+      next.agent_earnings += offer.agent_cut;
+    }
+  }
+  next.pending_scenario = undefined;
+  next.screen = next.post_scenario_screen ?? "menu";
+  next.post_scenario_screen = undefined;
+  return next;
+};
+
+export const acceptScenarioRecruit = (state: GameState): GameState => {
+  const next = cloneState(state);
+  const scenario = next.pending_scenario;
+  if (scenario?.recruit_offer && scenario.recruit_cost !== undefined) {
+    if (next.agent_earnings >= scenario.recruit_cost) {
+      next.agent_earnings -= scenario.recruit_cost;
+      next.userPlayers.push(scenario.recruit_offer);
+      lockTournamentEligibilityForWeek(next);
+    }
+  }
+  next.pending_scenario = undefined;
+  next.screen = next.post_scenario_screen ?? "menu";
+  next.post_scenario_screen = undefined;
+  return next;
+};
+
 export const dismissInjuryAlerts = (state: GameState): GameState => {
   const next = cloneState(state);
   next.injuryAlerts = [];

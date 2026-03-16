@@ -7,11 +7,14 @@ import {
   Text as PaperText,
 } from "react-native-paper";
 import {
+  acceptEndorsement,
+  acceptScenarioRecruit,
   addRecruit,
   advanceWeek,
   canRunExhibition,
   createInitialState,
   dismissInjuryAlerts,
+  dismissQuarterlyScenario,
   enterTournaments,
   exhibitionFocuses,
   getAvailableTournaments,
@@ -43,6 +46,7 @@ import {
   InjuryAlertScreen,
   LandingScreen,
   MenuScreen,
+  QuarterlyScenarioScreen,
   RecruitOffersScreen,
   RecruitTerritoriesScreen,
   RetireAgentScreen,
@@ -214,6 +218,24 @@ export default function App() {
             onContinue={() => setState((prev) => dismissInjuryAlerts(prev))}
           />
         );
+      case "quarterly-scenario":
+        return state.pending_scenario ? (
+          <QuarterlyScenarioScreen
+            scenario={state.pending_scenario}
+            agentCash={state.agent_earnings}
+            year={state.year}
+            onContinue={() => setState((prev) => dismissQuarterlyScenario(prev))}
+            onAccept={() =>
+              setState((prev) => {
+                const type = prev.pending_scenario?.type;
+                if (type === "endorsement_offer") return acceptEndorsement(prev);
+                if (type === "star_vet" || type === "superstar_youngster") return acceptScenarioRecruit(prev);
+                return dismissQuarterlyScenario(prev);
+              })
+            }
+            onDecline={() => setState((prev) => dismissQuarterlyScenario(prev))}
+          />
+        ) : null;
       case "menu":
         return (
           <MenuScreen

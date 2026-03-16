@@ -3,7 +3,7 @@ import { Player } from "../types/game";
 import { clamp, randomBetween, randomChoice, randomInt } from "./random";
 import { ENERGY_MAX, STAMINA_MAX } from "./engineConstants";
 
-const makePotentialLetter = (potential: number): string => {
+export const makePotentialLetter = (potential: number): string => {
   if (potential > 97) return "A+";
   if (potential > 93) return "A";
   if (potential > 90) return "A-";
@@ -24,7 +24,7 @@ const generateName = (nationality: string): string => {
   return `${randomChoice(pool.first)} ${randomChoice(pool.last)}`;
 };
 
-const generateUniqueName = (nationality: string, takenNames: Set<string>): string => {
+export const generateUniqueName = (nationality: string, takenNames: Set<string>): string => {
   for (let attempt = 0; attempt < 200; attempt += 1) {
     const candidate = generateName(nationality);
     if (!takenNames.has(candidate)) {

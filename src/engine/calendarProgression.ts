@@ -1,5 +1,6 @@
 import { GameState, InjuryAlert } from "../types/game";
 import { applyWeeklyPlayerProgress, endOfYear } from "./playerProgress";
+import { generateQuarterlyScenario, QUARTERLY_TRIGGER_WEEKS } from "./quarterlyScenarios";
 import {
   isCurrentWeekTournamentProcessed,
   markCurrentWeekProcessed,
@@ -40,10 +41,31 @@ export const advanceWeek = (state: GameState): GameState => {
     lockTournamentEligibilityForWeek(next);
   }
 
+  const seenScenarios = next.quarterly_scenarios_seen ?? [];
+  const isQuarterlyTrigger =
+    QUARTERLY_TRIGGER_WEEKS.includes(previousWeek) && !seenScenarios.includes(previousWeek);
+  let pendingScenario = null;
+  if (isQuarterlyTrigger) {
+    next.quarterly_scenarios_seen = [...seenScenarios, previousWeek];
+    pendingScenario = generateQuarterlyScenario(next);
+  }
+
   if (injuryAlerts.length > 0) {
     next.injuryAlerts = injuryAlerts;
-    next.postInjuryAlertScreen = targetScreen;
+    if (pendingScenario) {
+      next.pending_scenario = pendingScenario;
+      next.post_scenario_screen = targetScreen;
+      next.postInjuryAlertScreen = "quarterly-scenario";
+    } else {
+      next.postInjuryAlertScreen = targetScreen;
+    }
     next.screen = "injury-alert";
+  } else if (pendingScenario) {
+    next.injuryAlerts = [];
+    next.postInjuryAlertScreen = undefined;
+    next.pending_scenario = pendingScenario;
+    next.post_scenario_screen = targetScreen;
+    next.screen = "quarterly-scenario";
   } else {
     next.injuryAlerts = [];
     next.postInjuryAlertScreen = undefined;
@@ -69,6 +91,14 @@ export const skipToWeek = (state: GameState, week: number): GameState => {
 
   resetSkippedTournamentPoints(next.userPlayers, skipStartWeek, week - 1);
   next.week = week;
+
+  const skippedTriggers = QUARTERLY_TRIGGER_WEEKS.filter(
+    (w) => w >= startWeek && w < week && !(next.quarterly_scenarios_seen ?? []).includes(w),
+  );
+  if (skippedTriggers.length > 0) {
+    next.quarterly_scenarios_seen = [...(next.quarterly_scenarios_seen ?? []), ...skippedTriggers];
+  }
+
   clearEligibilityLockWeek(next);
   markCurrentWeekUnprocessed(next);
   refreshStandings(next.userPlayers);
