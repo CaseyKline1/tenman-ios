@@ -43,7 +43,9 @@ const improvePlayerAtYearEnd = (player: Player) => {
 export const endOfYear = (state: GameState) => {
   for (const player of state.userPlayers) {
     player.age += 1;
-    improvePlayerAtYearEnd(player);
+    if ((player.break_weeks_remaining ?? 0) === 0) {
+      improvePlayerAtYearEnd(player);
+    }
     player.last_year_results = { ...player.annual_results };
     player.annual_results = {};
     player.season_record = { wins: 0, losses: 0 };

@@ -337,7 +337,9 @@ export const getEligibleExhibitionPlayers = (state: GameState): Player[] =>
 export const canRunExhibition = (state: GameState): boolean => state.week < 48;
 
 export const getTrainingEligiblePlayers = (state: GameState): Player[] =>
-  state.userPlayers.filter((player) => player.age <= 27 && player.injury_weeks === 0);
+  state.userPlayers.filter(
+    (player) => player.age <= 27 && player.injury_weeks === 0 && (player.break_weeks_remaining ?? 0) === 0,
+  );
 
 export const territoryRecruitOptions = RECRUIT_TERRITORY_OPTIONS;
 
