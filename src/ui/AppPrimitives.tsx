@@ -153,6 +153,20 @@ export const PlayerCard = ({
         </PaperText>
       </View>
     )}
+    {(player.suspension_weeks_remaining ?? 0) > 0 && (
+      <View style={styles.suspensionBanner}>
+        <PaperText style={styles.suspensionBannerText}>
+          Suspended: {player.suspension_weeks_remaining} {player.suspension_weeks_remaining! === 1 ? "week" : "weeks"} remaining
+        </PaperText>
+      </View>
+    )}
+    {(player.break_weeks_remaining ?? 0) > 0 && (
+      <View style={styles.breakBanner}>
+        <PaperText style={styles.breakBannerText}>
+          On sabbatical: {player.break_weeks_remaining} {player.break_weeks_remaining! === 1 ? "week" : "weeks"} remaining
+        </PaperText>
+      </View>
+    )}
     <View style={styles.rowWrap}>
       <MiniStat label="Rank" value={`#${toInt(player.ranking)}`} />
       {inlineExtraStat}

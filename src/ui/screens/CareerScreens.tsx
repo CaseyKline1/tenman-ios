@@ -241,11 +241,8 @@ export const QuarterlyScenarioScreen = ({
         <CardBlock>
           <PaperText style={styles.h3}>{scenario.affected_player_name}</PaperText>
           <PaperText style={styles.text}>
-            Has fully recommitted to training with renewed determination! Their potential ceiling has increased by {scenario.potential_change} points.
+            Has fully recommitted to training with renewed determination! Their rate of improvement will increase going forward.
           </PaperText>
-          {scenario.new_potential_letter && (
-            <PaperText style={styles.text}>New potential: {scenario.new_potential_letter}</PaperText>
-          )}
         </CardBlock>
         <Button label="Continue" onPress={onContinue} />
       </Section>
@@ -259,11 +256,8 @@ export const QuarterlyScenarioScreen = ({
         <CardBlock>
           <PaperText style={styles.h3}>{scenario.affected_player_name}</PaperText>
           <PaperText style={styles.text}>
-            Seems to have lost their passion for the game and is going through the motions. Their potential ceiling has declined by {Math.abs(scenario.potential_change ?? 0)} points.
+            Seems to have lost their passion for the game and is going through the motions. Their rate of improvement will slow going forward.
           </PaperText>
-          {scenario.new_potential_letter && (
-            <PaperText style={styles.text}>New potential: {scenario.new_potential_letter}</PaperText>
-          )}
         </CardBlock>
         <Button label="Continue" onPress={onContinue} />
       </Section>

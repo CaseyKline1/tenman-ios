@@ -183,6 +183,32 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
+  suspensionBanner: {
+    backgroundColor: "#fef3c7",
+    borderColor: "#f59e0b",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  suspensionBannerText: {
+    color: "#78350f",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  breakBanner: {
+    backgroundColor: "#e0e7ff",
+    borderColor: "#6366f1",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  breakBannerText: {
+    color: "#312e81",
+    fontSize: 13,
+    fontWeight: "700",
+  },
   rowWrap: {
     flexDirection: "row",
     flexWrap: "wrap",

@@ -135,13 +135,58 @@ const generateStarVet = (userName: string, cost: number, takenNames: Set<string>
 
 const generateSuperstarYoungster = (userName: string, cost: number, takenNames: Set<string>): Player => {
   const costFactor = clamp((cost - 200_000) / 800_000, 0, 1);
-  const potential = Math.round(clamp(90 + costFactor * 10 + randomBetween(-1, 1), 90, 100));
+  const potential = Math.round(clamp(92 + costFactor * 8 + randomBetween(-2, 2), 90, 100));
   const age = randomInt(14, 15);
   const overall = age < 15
-    ? Math.round(clamp(46 + randomBetween(-4, 4), 40, 55))
-    : Math.round(clamp(50 + randomBetween(-4, 4), 44, 57));
+    ? Math.round(clamp(62 + costFactor * 6 + randomBetween(-5, 5), 54, 72))
+    : Math.round(clamp(66 + costFactor * 6 + randomBetween(-5, 5), 58, 76));
 
-  const juniorBasePoints = randomInt(150, 450);
+  const archetype = randomInt(1, 5);
+  let hard: number, clay: number, grass: number, serve: number, stamina: number, clutch: number;
+
+  if (archetype === 1) {
+    // Clay specialist (high stamina, moderate serve)
+    clay = Math.round(randomBetween(80, 93));
+    hard = Math.round(randomBetween(66, 80));
+    grass = Math.round(randomBetween(58, 72));
+    serve = Math.round(randomBetween(52, 70));
+    stamina = Math.round(randomBetween(82, 94));
+    clutch = Math.round(randomBetween(55, 75));
+  } else if (archetype === 2) {
+    // Hard court baseliner (well-rounded, solid everywhere)
+    hard = Math.round(randomBetween(80, 93));
+    clay = Math.round(randomBetween(72, 84));
+    grass = Math.round(randomBetween(68, 80));
+    serve = Math.round(randomBetween(62, 78));
+    stamina = Math.round(randomBetween(78, 90));
+    clutch = Math.round(randomBetween(58, 76));
+  } else if (archetype === 3) {
+    // Big server (dominant on fast courts, weaker on clay)
+    serve = Math.round(randomBetween(82, 95));
+    hard = Math.round(randomBetween(76, 90));
+    grass = Math.round(randomBetween(74, 88));
+    clay = Math.round(randomBetween(56, 72));
+    stamina = Math.round(randomBetween(64, 78));
+    clutch = Math.round(randomBetween(50, 70));
+  } else if (archetype === 4) {
+    // All-court attacker (Federer-type, grass and hard dominant)
+    hard = Math.round(randomBetween(78, 90));
+    grass = Math.round(randomBetween(80, 92));
+    clay = Math.round(randomBetween(68, 80));
+    serve = Math.round(randomBetween(70, 84));
+    stamina = Math.round(randomBetween(70, 84));
+    clutch = Math.round(randomBetween(65, 82));
+  } else {
+    // Defensive grinder (elite stamina and clutch, weaker serve)
+    clay = Math.round(randomBetween(82, 94));
+    hard = Math.round(randomBetween(62, 76));
+    grass = Math.round(randomBetween(56, 70));
+    serve = Math.round(randomBetween(44, 62));
+    stamina = Math.round(randomBetween(86, 96));
+    clutch = Math.round(randomBetween(72, 88));
+  }
+
+  const juniorBasePoints = 0;
   const player = createScenarioPlayerBase(userName, takenNames);
   player.recruited_from = "Junior Scouting";
   player.overall = overall;
@@ -153,11 +198,10 @@ const generateSuperstarYoungster = (userName: string, cost: number, takenNames: 
   player.junior_points_inputs["Career Junior Points"] = juniorBasePoints;
   player.junior_points = juniorBasePoints;
   player.points = 0;
-  player.court_proficiencies = {
-    hard: Math.round(randomBetween(60, 85)),
-    clay: Math.round(randomBetween(55, 80)),
-    grass: Math.round(randomBetween(55, 80)),
-  };
+  player.serve = serve;
+  player.stamina = clamp(stamina, 1, STAMINA_MAX);
+  player.big_moments = clutch;
+  player.court_proficiencies = { hard, clay, grass };
   return player;
 };
 
