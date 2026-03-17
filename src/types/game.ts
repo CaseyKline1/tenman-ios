@@ -58,6 +58,7 @@ export interface Endorsement {
 export type QuarterlyScenarioType =
   | "steroids_ban"
   | "player_break"
+  | "paternity_leave"
   | "star_vet"
   | "superstar_youngster"
   | "potential_boost"
@@ -120,6 +121,7 @@ export interface Player {
   endorsement?: Endorsement;
   suspension_weeks_remaining?: number;
   break_weeks_remaining?: number;
+  paternity_weeks_remaining?: number;
   is_promising_junior?: boolean;
   qualify_tourney: Record<string, number>;
   required_ranking: Record<string, number>;

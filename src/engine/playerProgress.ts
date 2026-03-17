@@ -104,6 +104,9 @@ export const applyWeeklyPlayerProgress = (player: Player): InjuryAlert | null =>
   if ((player.break_weeks_remaining ?? 0) > 0) {
     player.break_weeks_remaining = Math.max(0, (player.break_weeks_remaining ?? 0) - 1);
   }
+  if ((player.paternity_weeks_remaining ?? 0) > 0) {
+    player.paternity_weeks_remaining = Math.max(0, (player.paternity_weeks_remaining ?? 0) - 1);
+  }
   const injuredThisWeek = checkForInjury(player);
   player.energy = player.junior
     ? clamp(player.energy + 7, 1, ENERGY_MAX)

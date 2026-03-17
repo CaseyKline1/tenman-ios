@@ -211,8 +211,8 @@ export const generateQuarterlyScenario = (state: GameState): QuarterlyScenario |
   const takenNames = new Set(state.userPlayers.map((p) => p.name));
   const roll = Math.random();
 
-  // steroids_ban: 5%
-  if (roll < 0.05) {
+  // steroids_ban: 1%
+  if (roll < 0.01) {
     if (allPlayers.length === 0) return null;
     const player = randomChoice(allPlayers);
     player.suspension_weeks_remaining = 52;
@@ -223,8 +223,8 @@ export const generateQuarterlyScenario = (state: GameState): QuarterlyScenario |
     };
   }
 
-  // player_break: 5%
-  if (roll < 0.10) {
+  // player_break: 1%
+  if (roll < 0.02) {
     if (allPlayers.length === 0) return null;
     const player = randomChoice(allPlayers);
     const months = randomChoice([3, 6, 12, 18]);
@@ -238,8 +238,20 @@ export const generateQuarterlyScenario = (state: GameState): QuarterlyScenario |
     };
   }
 
+  // paternity_leave: 2%
+  if (roll < 0.04) {
+    if (allPlayers.length === 0) return null;
+    const player = randomChoice(allPlayers);
+    player.paternity_weeks_remaining = 13;
+    return {
+      type: "paternity_leave",
+      affected_player_id: player.player_id,
+      affected_player_name: player.name,
+    };
+  }
+
   // star_vet: 3%
-  if (roll < 0.13) {
+  if (roll < 0.07) {
     const cost = Math.round(randomBetween(100_000, 500_000));
     const recruit = generateStarVet(state.userName, cost, takenNames);
     return {
@@ -250,7 +262,7 @@ export const generateQuarterlyScenario = (state: GameState): QuarterlyScenario |
   }
 
   // superstar_youngster: 5%
-  if (roll < 0.18) {
+  if (roll < 0.12) {
     const cost = Math.round(randomBetween(200_000, 1_000_000));
     const recruit = generateSuperstarYoungster(state.userName, cost, takenNames);
     return {
@@ -261,7 +273,7 @@ export const generateQuarterlyScenario = (state: GameState): QuarterlyScenario |
   }
 
   // potential_boost: 6%
-  if (roll < 0.24) {
+  if (roll < 0.18) {
     if (allPlayers.length === 0) return null;
     const player = randomChoice(allPlayers);
     const change = Math.round(randomBetween(3, 8));
@@ -277,7 +289,7 @@ export const generateQuarterlyScenario = (state: GameState): QuarterlyScenario |
   }
 
   // potential_decline: 6%
-  if (roll < 0.30) {
+  if (roll < 0.24) {
     if (allPlayers.length === 0) return null;
     const player = randomChoice(allPlayers);
     const change = Math.round(randomBetween(3, 8));

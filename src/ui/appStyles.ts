@@ -209,6 +209,19 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
+  paternityBanner: {
+    backgroundColor: "#fce7f3",
+    borderColor: "#ec4899",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  paternityBannerText: {
+    color: "#831843",
+    fontSize: 13,
+    fontWeight: "700",
+  },
   rowWrap: {
     flexDirection: "row",
     flexWrap: "wrap",

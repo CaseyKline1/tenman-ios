@@ -127,7 +127,8 @@ export const getAvailableTournaments = (state: GameState): TournamentWithPlayers
     (player) =>
       player.injury_weeks === 0 &&
       (player.suspension_weeks_remaining ?? 0) === 0 &&
-      (player.break_weeks_remaining ?? 0) === 0,
+      (player.break_weeks_remaining ?? 0) === 0 &&
+      (player.paternity_weeks_remaining ?? 0) === 0,
   );
   const result: TournamentWithPlayers[] = [];
 

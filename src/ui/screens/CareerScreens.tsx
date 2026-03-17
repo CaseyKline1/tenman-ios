@@ -234,6 +234,22 @@ export const QuarterlyScenarioScreen = ({
     );
   }
 
+  if (type === "paternity_leave") {
+    return (
+      <Section>
+        <PaperText style={styles.h2}>Paternity Leave</PaperText>
+        <CardBlock>
+          <PaperText style={styles.h3}>{scenario.affected_player_name}</PaperText>
+          <PaperText style={styles.text}>
+            Is taking 3 months of paternity leave to welcome a new addition to their family.
+            They will not be available to compete during this period.
+          </PaperText>
+        </CardBlock>
+        <Button label="Continue" onPress={onContinue} />
+      </Section>
+    );
+  }
+
   if (type === "potential_boost") {
     return (
       <Section>

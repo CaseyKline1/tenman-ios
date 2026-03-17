@@ -167,6 +167,13 @@ export const PlayerCard = ({
         </PaperText>
       </View>
     )}
+    {(player.paternity_weeks_remaining ?? 0) > 0 && (
+      <View style={styles.paternityBanner}>
+        <PaperText style={styles.paternityBannerText}>
+          Paternity leave: {player.paternity_weeks_remaining} {player.paternity_weeks_remaining! === 1 ? "week" : "weeks"} remaining
+        </PaperText>
+      </View>
+    )}
     <View style={styles.rowWrap}>
       <MiniStat label="Rank" value={`#${toInt(player.ranking)}`} />
       {inlineExtraStat}
