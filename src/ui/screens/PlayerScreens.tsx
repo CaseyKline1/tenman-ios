@@ -142,6 +142,17 @@ export const PlayerDetailsScreen = ({ detailPlayer, year, onBack }: PlayerDetail
               </View>
             </CardBlock>
 
+            {detailPlayer.endorsement && (
+              <CardBlock>
+                <PaperText style={styles.detailSectionHeader}>Endorsement Deal</PaperText>
+                <DetailStatRow label="Brand" value={detailPlayer.endorsement.brand} />
+                <DetailStatRow label="Total Value" value={formatMoney(detailPlayer.endorsement.total_value)} />
+                <DetailStatRow label="Deal Length" value={`${detailPlayer.endorsement.years} ${detailPlayer.endorsement.years === 1 ? "year" : "years"}`} />
+                <DetailStatRow label="Ends After" value={String(detailPlayer.endorsement.end_year)} />
+                <DetailStatRow label="Agent Cut" value={formatMoney(detailPlayer.endorsement.agent_cut)} />
+              </CardBlock>
+            )}
+
             <CardBlock>
               <PaperText style={styles.detailSectionHeader}>Results This Year ({year})</PaperText>
               {annualResults.length === 0 ? (
