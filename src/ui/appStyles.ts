@@ -31,6 +31,18 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 6,
   },
+  appTitle: {
+    color: "#0f172a",
+    fontSize: 30,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  appTagline: {
+    color: "#475569",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+  },
   section: {
     gap: 10,
     backgroundColor: "#f5f8fc",
@@ -78,6 +90,9 @@ export const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#ffffff",
+  },
+  sectionIntro: {
+    gap: 4,
   },
   spacer: {
     height: 4,
@@ -390,5 +405,16 @@ export const styles = StyleSheet.create({
     color: "#991b1b",
     fontSize: 13,
     fontWeight: "600",
+  },
+  bulletList: {
+    gap: 8,
+  },
+  bulletItem: {
+    color: "#111827",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  legalCard: {
+    gap: 8,
   },
 });

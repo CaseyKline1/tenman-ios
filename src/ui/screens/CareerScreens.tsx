@@ -11,10 +11,17 @@ type LandingScreenProps = {
   username: string;
   setUsername: React.Dispatch<React.SetStateAction<string>>;
   onStart: () => void;
+  onViewPrivacy: () => void;
 };
 
-export const LandingScreen = ({ username, setUsername, onStart }: LandingScreenProps) => (
+export const LandingScreen = ({ username, setUsername, onStart, onViewPrivacy }: LandingScreenProps) => (
   <Section>
+    <View style={styles.sectionIntro}>
+      <PaperText style={styles.appTitle}>Tennis Agent</PaperText>
+      <PaperText style={styles.appTagline}>
+        Build a roster, manage careers, and guide your players through the tennis calendar.
+      </PaperText>
+    </View>
     <PaperText style={styles.h2}>Start New Career</PaperText>
     <PaperTextInput
       style={styles.input}
@@ -28,6 +35,7 @@ export const LandingScreen = ({ username, setUsername, onStart }: LandingScreenP
       textColor="#000000"
     />
     <Button label="Start Your Journey" onPress={onStart} disabled={!username.trim()} />
+    <Button label="Privacy Policy" variant="secondary" onPress={onViewPrivacy} />
   </Section>
 );
 
@@ -127,6 +135,7 @@ type MenuScreenProps = {
   onSkipAhead: () => void;
   onRemovePlayer: () => void;
   onRetire: () => void;
+  onViewPrivacy: () => void;
 };
 
 export const MenuScreen = ({
@@ -140,6 +149,7 @@ export const MenuScreen = ({
   onSkipAhead,
   onRemovePlayer,
   onRetire,
+  onViewPrivacy,
 }: MenuScreenProps) => (
   <Section>
     <View style={styles.menuHeaderRow}>
@@ -160,6 +170,7 @@ export const MenuScreen = ({
       <Button label="Skip Ahead" variant="gold" onPress={onSkipAhead} contentStyle={styles.menuButtonContent} />
       <Button label="Remove Player" variant="danger" onPress={onRemovePlayer} contentStyle={styles.menuButtonContent} />
       <Button label="Retire Agent" variant="danger" onPress={onRetire} contentStyle={styles.menuButtonContent} />
+      <Button label="Privacy Policy" variant="secondary" onPress={onViewPrivacy} contentStyle={styles.menuButtonContent} />
     </View>
   </Section>
 );
@@ -381,5 +392,39 @@ export const SkipAheadScreen = ({
     <Button label="Sim to Selected Week" onPress={onSimToSelectedWeek} />
     <Button label="Sim to Next Year" variant="gold" onPress={onSimToNextYear} />
     <Button label="Back to Menu" variant="secondary" onPress={onBack} />
+  </Section>
+);
+
+type PrivacyPolicyScreenProps = {
+  onBack: () => void;
+};
+
+export const PrivacyPolicyScreen = ({ onBack }: PrivacyPolicyScreenProps) => (
+  <Section>
+    <View style={styles.topLeftAction}>
+      <Button label="Back" variant="secondary" onPress={onBack} />
+    </View>
+    <PaperText style={styles.h2}>Privacy Policy</PaperText>
+    <CardBlock style={styles.legalCard}>
+      <PaperText style={styles.text}>
+        Tennis Agent stores your career progress only on your device so the game can restore your save when you reopen the app.
+      </PaperText>
+      <View style={styles.bulletList}>
+        <PaperText style={styles.bulletItem}>• No account is required to play.</PaperText>
+        <PaperText style={styles.bulletItem}>• No analytics, advertising, or third-party marketing SDKs are used by the app.</PaperText>
+        <PaperText style={styles.bulletItem}>• Your manager name, roster, and game progress are saved locally using on-device storage.</PaperText>
+        <PaperText style={styles.bulletItem}>• Your save data is not uploaded to the developer or shared with third parties.</PaperText>
+        <PaperText style={styles.bulletItem}>• You can erase your save at any time by using Retire Agent inside the app or by deleting the app from your device.</PaperText>
+      </View>
+    </CardBlock>
+    <CardBlock style={styles.legalCard}>
+      <PaperText style={styles.h3}>Data Used by the App</PaperText>
+      <PaperText style={styles.text}>
+        The app uses local storage only to keep your current career save available between launches. That data stays on-device and is not used for tracking.
+      </PaperText>
+      <PaperText style={styles.text}>
+        If this policy changes in a future version, the in-app policy and the App Store listing will be updated before release.
+      </PaperText>
+    </CardBlock>
   </Section>
 );

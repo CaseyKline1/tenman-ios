@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "tenman-ios",
+    "name": "Tennis Agent",
     "slug": "tenman-ios",
+    "scheme": "com.caseyk1.tenmanios",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,6 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.caseyk1.tenmanios",
       "infoPlist": {
+        "CFBundleDisplayName": "Tennis Agent",
         "ITSAppUsesNonExemptEncryption": false
       }
     },

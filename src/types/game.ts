@@ -140,6 +140,7 @@ export interface Player {
 
 export type ScreenKey =
   | "landing"
+  | "privacy-policy"
   | "recruit-territories"
   | "offer-recruits"
   | "choose-tournament"

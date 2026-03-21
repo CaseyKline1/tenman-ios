@@ -46,6 +46,7 @@ import {
   InjuryAlertScreen,
   LandingScreen,
   MenuScreen,
+  PrivacyPolicyScreen,
   QuarterlyScenarioScreen,
   RecruitOffersScreen,
   RecruitTerritoriesScreen,
@@ -73,6 +74,7 @@ export default function App() {
   const [username, setUsername] = useState("");
   const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null);
   const [detailBackScreen, setDetailBackScreen] = useState<PlayerListScreen>("view-senior-players");
+  const [privacyBackScreen, setPrivacyBackScreen] = useState<ScreenKey>("landing");
 
   useEffect(() => {
     const boot = async () => {
@@ -88,8 +90,12 @@ export default function App() {
 
   useEffect(() => {
     if (booting) return;
-    void saveGameState(state);
-  }, [state, booting]);
+    const stateToSave =
+      state.screen === "privacy-policy"
+        ? { ...state, screen: privacyBackScreen }
+        : state;
+    void saveGameState(stateToSave);
+  }, [state, booting, privacyBackScreen]);
 
   const availableTournaments = useMemo<TournamentWithPlayers[]>(() => {
     if (state.screen !== "choose-tournament") return [];
@@ -139,6 +145,10 @@ export default function App() {
   }, [state.screen, availableTournaments]);
 
   const go = (screen: ScreenKey) => setState((prev) => ({ ...prev, screen }));
+  const openPrivacyPolicy = (backScreen: ScreenKey) => {
+    setPrivacyBackScreen(backScreen);
+    go("privacy-policy");
+  };
 
   const openPlayerDetails = (playerId: number, backScreen: PlayerListScreen) => {
     setDetailPlayerId(playerId);
@@ -152,7 +162,7 @@ export default function App() {
         <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
           <View style={styles.loadingScreen}>
             <PaperActivityIndicator size="large" color="#2563eb" />
-            <PaperText style={styles.loadingText}>Loading Tenman iOS save...</PaperText>
+            <PaperText style={styles.loadingText}>Loading Tennis Agent save...</PaperText>
           </View>
         </SafeAreaView>
       </PaperProvider>
@@ -168,6 +178,7 @@ export default function App() {
           <LandingScreen
             username={username}
             setUsername={setUsername}
+            onViewPrivacy={() => openPrivacyPolicy("landing")}
             onStart={() => {
               const trimmed = username.trim();
               if (!trimmed) return;
@@ -249,8 +260,11 @@ export default function App() {
             onSkipAhead={() => go("skip-ahead")}
             onRemovePlayer={() => go("remove-player")}
             onRetire={() => go("retire-agent")}
+            onViewPrivacy={() => openPrivacyPolicy("menu")}
           />
         );
+      case "privacy-policy":
+        return <PrivacyPolicyScreen onBack={() => go(privacyBackScreen)} />;
       case "retire-agent":
         return (
           <RetireAgentScreen
