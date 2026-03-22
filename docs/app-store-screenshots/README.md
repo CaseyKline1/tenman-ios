@@ -12,6 +12,7 @@ Recommended filenames:
 
 Notes:
 
+- `01-landing-screen.png` is already checked in as a real simulator capture.
 - Capture real in-app screenshots from an iPhone simulator or device.
 - Keep status bars clean and use the same device size for the full set.
 - Upload the same PNGs you store here to App Store Connect.
