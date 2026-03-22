@@ -12,6 +12,16 @@ Repository setting needed:
 
 - In GitHub, set `Settings > Pages > Source` to `GitHub Actions`
 
+## GitHub Source of Truth
+
+Keep the full App Store release package in this repository:
+
+- App config and identity: `app.json`
+- Native iOS submission project: `ios/`
+- Hosted marketing, support, and privacy pages: `docs/`
+- Submission copy and review answers: `docs/app-store-submission.md`
+- Final screenshot PNGs: `docs/app-store-screenshots/`
+
 ## App Information
 
 - Name: `Tennis Agent`
@@ -54,6 +64,12 @@ Use this for the App Review `Notes` field:
 
 `Tennis Agent is a single-player offline management game. No account or sign-in is required. All progress is stored locally on-device only. The in-app Privacy Policy is available from the landing screen and from the main menu. There are no in-app purchases, subscriptions, ads, or external services required for review.`
 
+## App Review Contact
+
+- Contact name: `Casey Kline`
+- Contact email: `ckline@unc.edu`
+- Contact phone: Add your preferred callback number directly in App Store Connect before submitting.
+
 ## App Privacy Answers
 
 - Tracking: `No`
@@ -80,6 +96,8 @@ Review the substances-related questions carefully because the game includes a ba
 ## Screenshot Shot List
 
 The app is currently configured as iPhone-only, which avoids iPad screenshot requirements.
+
+Store the final screenshot PNGs in `docs/app-store-screenshots/`.
 
 Recommended first release screenshots:
 
