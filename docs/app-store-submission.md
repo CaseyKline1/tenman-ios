@@ -68,7 +68,7 @@ Use this for the App Review `Notes` field:
 
 - Contact name: `Casey Kline`
 - Contact email: `ckline@unc.edu`
-- Contact phone: Add your preferred callback number directly in App Store Connect before submitting.
+- Contact phone: `+1 650-868-0575`
 
 ## App Privacy Answers
 
